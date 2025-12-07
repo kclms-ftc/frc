@@ -9,9 +9,8 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 public class HelloWorld extends OpMode {
 
     @Override
-    public void init_loop() {
-        super.init_loop();
-            telemetry.addData("Hello","World")
+    public void init() {
+        telemetry.addData("Hello","World");
     }
 
     @Override
