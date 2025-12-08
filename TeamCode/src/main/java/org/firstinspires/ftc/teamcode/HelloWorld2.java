@@ -16,6 +16,6 @@ public class HelloWorld2 extends OpMode{
 
     @Override
     public void loop() {
-        
+
     }
 }
