@@ -9,10 +9,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 @TeleOp(name = "Mecanum Drivetrain", group = "Linear Opmode")
 public class Drivetrain extends LinearOpMode {
 
-    private DcMotor wheel_0;
-    private DcMotor wheel_1;
-    private DcMotor wheel_2;
-    private DcMotor wheel_3;
+    // Removed individual DcMotor declarations
+    private HardwareMapConfig robot; // Use HardwareMapConfig
 
     private ElapsedTime runtime = new ElapsedTime();
 
@@ -24,7 +22,9 @@ public class Drivetrain extends LinearOpMode {
     @Override
     public void runOpMode() {
 
-        initializeHardware();
+        // Initialize HardwareMapConfig
+        robot = new HardwareMapConfig(hardwareMap);
+        initializeHardware(); // Helper to set directions/modes
 
         telemetry.addData("Status", "Initialized");
         telemetry.addData("Wheel Config", "NE:0 SE:1 SW:2 NW:3");
@@ -37,9 +37,28 @@ public class Drivetrain extends LinearOpMode {
 
             handleSpeedModes();
 
+            // Inputs
             double drive = -gamepad1.left_stick_y;
             double strafe = gamepad1.left_stick_x;
+            // Rotation: Right Stick X (Clockwise / Counter-Clockwise)
             double rotate = gamepad1.right_stick_x;
+
+            // Add D-Pad control for "left gameoad" (Left Gamepad/D-Pad)
+            if (gamepad1.dpad_up) {
+                drive += 1.0;
+            } else if (gamepad1.dpad_down) {
+                drive -= 1.0;
+            }
+
+            if (gamepad1.dpad_left) {
+                strafe -= 1.0;
+            } else if (gamepad1.dpad_right) {
+                strafe += 1.0;
+            }
+
+            // Clamp values to -1.0 to 1.0
+            drive = Math.max(-1.0, Math.min(1.0, drive));
+            strafe = Math.max(-1.0, Math.min(1.0, strafe));
 
             calculateAndSetWheelPowers(drive, strafe, rotate);
 
@@ -48,25 +67,27 @@ public class Drivetrain extends LinearOpMode {
     }
 
     private void initializeHardware() {
-        wheel_0 = hardwareMap.get(DcMotor.class, "wheel_0");
-        wheel_1 = hardwareMap.get(DcMotor.class, "wheel_1");
-        wheel_2 = hardwareMap.get(DcMotor.class, "wheel_2");
-        wheel_3 = hardwareMap.get(DcMotor.class, "wheel_3");
+        // Directions
+        // 0: NE (Right Front) -> Forward
+        // 1: SE (Right Back) -> Forward
+        // 2: SW (Left Back) -> Reverse
+        // 3: NW (Left Front) -> Reverse
+        robot.wheel_0.setDirection(DcMotorSimple.Direction.FORWARD);
+        robot.wheel_1.setDirection(DcMotorSimple.Direction.FORWARD);
+        robot.wheel_2.setDirection(DcMotorSimple.Direction.REVERSE);
+        robot.wheel_3.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        wheel_0.setDirection(DcMotorSimple.Direction.FORWARD);
-        wheel_1.setDirection(DcMotorSimple.Direction.FORWARD);
-        wheel_2.setDirection(DcMotorSimple.Direction.REVERSE);
-        wheel_3.setDirection(DcMotorSimple.Direction.REVERSE);
+        // Zero Power Behavior
+        robot.wheel_0.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        robot.wheel_1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        robot.wheel_2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        robot.wheel_3.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        wheel_0.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        wheel_1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        wheel_2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        wheel_3.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-        wheel_0.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        wheel_1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        wheel_2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        wheel_3.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        // Run Mode
+        robot.wheel_0.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        robot.wheel_1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        robot.wheel_2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        robot.wheel_3.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 
     private void handleSpeedModes() {
@@ -81,10 +102,17 @@ public class Drivetrain extends LinearOpMode {
 
     private void calculateAndSetWheelPowers(double drive, double strafe, double rotate) {
 
-        double wheel_0_power = drive - strafe - rotate;
-        double wheel_1_power = drive + strafe - rotate;
-        double wheel_2_power = drive - strafe + rotate;
-        double wheel_3_power = drive + strafe + rotate;
+        // Mecanum drive calculations
+        // Calculate wheel powers.
+        // Note: This assumes standard X-configuration for Mecanum wheels.
+        // To rotate Clockwise (Right Stick > 0), Left wheels move Forward (+), Right
+        // wheels Backward (-).
+        // To rotate Counter-Clockwise (Right Stick < 0), Left wheels Backward (-),
+        // Right wheels Forward (+).
+        double wheel_0_power = drive - strafe - rotate; // NE (Right Front) - subtract rotate
+        double wheel_1_power = drive + strafe - rotate; // SE (Right Back) - subtract rotate
+        double wheel_2_power = drive - strafe + rotate; // SW (Left Back) + add rotate
+        double wheel_3_power = drive + strafe + rotate; // NW (Left Front) + add rotate
 
         double maxPower = Math.max(
                 Math.max(Math.abs(wheel_0_power), Math.abs(wheel_1_power)),
@@ -102,10 +130,10 @@ public class Drivetrain extends LinearOpMode {
         wheel_2_power *= speedMultiplier;
         wheel_3_power *= speedMultiplier;
 
-        wheel_0.setPower(wheel_0_power);
-        wheel_1.setPower(wheel_1_power);
-        wheel_2.setPower(wheel_2_power);
-        wheel_3.setPower(wheel_3_power);
+        robot.wheel_0.setPower(wheel_0_power);
+        robot.wheel_1.setPower(wheel_1_power);
+        robot.wheel_2.setPower(wheel_2_power);
+        robot.wheel_3.setPower(wheel_3_power);
     }
 
     private void displayTelemetry(double drive, double strafe, double rotate) {
@@ -125,13 +153,13 @@ public class Drivetrain extends LinearOpMode {
         telemetry.addData("Rotate", String.format("%.2f", rotate));
         telemetry.addLine();
 
-        telemetry.addData("NE (wheel_0)", String.format("%.2f", wheel_0.getPower()));
-        telemetry.addData("SE (wheel_1)", String.format("%.2f", wheel_1.getPower()));
-        telemetry.addData("SW (wheel_2)", String.format("%.2f", wheel_2.getPower()));
-        telemetry.addData("NW (wheel_3)", String.format("%.2f", wheel_3.getPower()));
+        telemetry.addData("NE (wheel_0)", String.format("%.2f", robot.wheel_0.getPower()));
+        telemetry.addData("SE (wheel_1)", String.format("%.2f", robot.wheel_1.getPower()));
+        telemetry.addData("SW (wheel_2)", String.format("%.2f", robot.wheel_2.getPower()));
+        telemetry.addData("NW (wheel_3)", String.format("%.2f", robot.wheel_3.getPower()));
         telemetry.addLine();
 
-        telemetry.addData("Controls", "Left Stick: Drive/Strafe");
+        telemetry.addData("Controls", "Left Stick/D-Pad: Drive/Strafe");
         telemetry.addData("", "Right Stick X: Rotate");
         telemetry.addData("", "Right Bumper: Precision");
         telemetry.addData("", "Left Bumper: Turbo");
