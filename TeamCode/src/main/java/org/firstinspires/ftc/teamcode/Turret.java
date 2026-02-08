@@ -51,10 +51,6 @@ public class Turret {
     // angle difference which allows a frame to be ignored
     private final double OUTLIER_DEG = 20;
 
-    // TODO: decrease if harsh movement, increase if too slow for large jumps
-    // maximum rate at which turret moves
-    private final double MAX_DEG_PER_SEC = 180;
-
     // TODO: increase if resets too quickly, decrease if resets too slowly
     // time after which no valid detections resets turret position
     private final long NO_VALID_DETECTIONS_MS = 250;
@@ -74,19 +70,19 @@ public class Turret {
 
     // variables that check status
     private Supplier<Boolean> safeToMove = () -> true; // supplier for live decision
-    private double currentAngleDeg = FRONT_ANGLE_DEG; // current loop's angle
-    private double lastAngleDeg = FRONT_ANGLE_DEG; // previous loop's angle
+    private double setpointToHoldDeg = FRONT_ANGLE_DEG; // setpoint we want to hold
     private double filteredDeg = 0; // adjusted angle for smoothing
-    private double lastValidVisionMS = 0; // timestamp of last valid detection
+    private long  lastValidVisionMs = 0; // timestamp of last valid detection
     private boolean hoodPos1 = true; // else hoodPos2 active
 
     // inputs from vision
     private boolean visionVisible = false;
     private double visionErrorDeg = 0; // +deg -> target to the right
-    private double visionTimeMs = 0.0; // timestamp
+    private long visionTimeMs = 0; // timestamp
 
-    // stopwatch
-    private final ElapsedTime loopTimer = new ElapsedTime();
+
+    // TODO: decide whether or not to use rate limiting
+
 
     // constructor
     public Turret(HardwareMap hw) {
@@ -102,8 +98,40 @@ public class Turret {
         // start hood in position 1
         this.hood.setPosition(HOOD_POS_1);
         hoodPos1 = true;
-
-        // start stopwatch
-        loopTimer.reset();
     }
+
+
+    // vision inputs setter
+    public void setVisionMeasurements(boolean visible, double errorDeg, long timeMs) {
+        this.visionVisible = visible;
+        this.visionErrorDeg = errorDeg;
+        this.visionTimeMs = timeMs; // typically System.currentTimeMillis()
+    }
+
+
+    // hood toggle
+    public void onHoodTogglePressed() {
+        hoodPos1 = !hoodPos1;
+        hood.setPosition(hoodPos1 ? HOOD_POS_1 : HOOD_POS_2);
+    }
+
+
+    // convert and return current degrees
+    public double getCurrentAngleDeg() {
+        int ticks = turret.getCurrentPosition();
+        return ticks / TICKS_PER_DEG;
+    }
+
+
+    // safety setter
+    public void setSafeToMove(Supplier<Boolean> supplier) {
+        this.safeToMove = (supplier != null) ? supplier : () -> true;
+    }
+
+
+    // keeps turret angle within range
+    private double clampAngle(double deg) {
+        return Math.max(MIN_ANGLE_DEG, Math.min(MAX_ANGLE_DEG, deg));
+    }
+
 }
