@@ -18,7 +18,6 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 import java.util.function.Supplier;
 
@@ -73,7 +72,7 @@ public class Turret {
     private double setpointToHoldDeg = FRONT_ANGLE_DEG; // setpoint we want to hold
     private double filteredDeg = 0; // adjusted angle for smoothing
     private long  lastValidVisionMs = 0; // timestamp of last valid detection
-    private boolean hoodPos1 = true; // else hoodPos2 active
+    private boolean hoodPos1; // set to true
 
     // inputs from vision
     private boolean visionVisible = false;
@@ -130,8 +129,57 @@ public class Turret {
 
 
     // keeps turret angle within range
-    private double clampAngle(double deg) {
+    private double safeAngle(double deg) {
         return Math.max(MIN_ANGLE_DEG, Math.min(MAX_ANGLE_DEG, deg));
     }
 
+    // TODO: add telemetry methods
+
+    // main method - this is called once per OpMode loop
+    public void update(boolean movementForbidden) {
+        double desiredSetpointDeg = setpointToHoldDeg;
+
+        if (visionVisible) {
+            // smoothing
+            filteredDeg = ANGLE_TREND*visionErrorDeg + (1-ANGLE_TREND)*filteredDeg;
+            // ignore outliers
+            if (Math.abs(visionErrorDeg - filteredDeg) <= OUTLIER_DEG) {
+                desiredSetpointDeg = safeAngle(setpointToHoldDeg+filteredDeg);
+                // this frame is accepted so timestamp recorded
+                lastValidVisionMs = visionTimeMs;
+            }
+        } else { // visionVisible == false
+            long nowMs = System.currentTimeMillis();
+            if (nowMs - lastValidVisionMs > NO_VALID_DETECTIONS_MS) {
+                desiredSetpointDeg = FRONT_ANGLE_DEG;
+            }
+        }
+
+        // commit the setpoint
+        setpointToHoldDeg = safeAngle(desiredSetpointDeg);
+
+        if (safeToMove.get() && !movementForbidden) {
+            // measure actual angle from encoder
+            double measuredDeg = getCurrentAngleDeg();
+
+            // compute error and p power
+            double error = setpointToHoldDeg - measuredDeg;
+            double power = P * error;
+
+            // ensure power in range
+            if (power > MAX_POWER) power = MAX_POWER;
+            if (power < -MAX_POWER) power = -MAX_POWER;
+
+            // don't rotate past limits
+            if ((setpointToHoldDeg >= MAX_ANGLE_DEG && power > 0) || (setpointToHoldDeg <= MIN_ANGLE_DEG && power < 0)) {
+                power = 0;
+            }
+
+            // rotate
+            turret.setPower(power);
+        } else {
+            turret.setPower(0);
+        }
+    }
 }
+
