@@ -20,6 +20,8 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
+
 import java.util.function.Supplier;
 
 public class Turret {
@@ -139,8 +141,6 @@ public class Turret {
         return Math.max(MIN_ANGLE_DEG, Math.min(MAX_ANGLE_DEG, deg));
     }
 
-    // TODO: add telemetry methods
-
     // main method - this is called once per OpMode loop
     public void update(boolean movementForbidden) {
         double desiredSetpointDeg = setpointToHoldDeg;
@@ -209,6 +209,12 @@ public class Turret {
         hoodPos = Math.max(MIN_HOOD_POS, Math.min(MAX_HOOD_POS, hoodPos));
         hood.setPosition(hoodPos);
 
+    }
+
+    // telemetry to display hood position and turret angle
+    public void addTelemetry(Telemetry tel) {
+        tel.addData("hood pos", hood.getPosition());
+        tel.addData("turret angle", getCurrentAngleDeg());
     }
 }
 
