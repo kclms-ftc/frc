@@ -16,6 +16,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
@@ -33,6 +34,11 @@ public class Turret {
     private final double MIN_ANGLE_DEG = -110;
     private final double MAX_ANGLE_DEG = 110;
     private final double FRONT_ANGLE_DEG = 0;
+
+    // TODO: adjust these after testing
+    // hood servo limits
+    private final double MIN_HOOD_POS = 0.2;
+    private final double MAX_HOOD_POS = 0.8;
 
     // TODO: adjust P value
     // PIDF motor tuning (only using P-proportionality)
@@ -180,6 +186,29 @@ public class Turret {
         } else {
             turret.setPower(0);
         }
+    }
+
+    // manual operation of turret and hood from gamepad
+    public void manualControl(Gamepad gp) {
+
+        // turret movement -> l2(left), r2(right)
+        double turretPower = 0.0;
+        if (gp.left_trigger > 0) {turretPower = -0.4;}
+        if (gp.right_trigger > 0) {turretPower = 0.4;}
+        double currentAngleDeg = getCurrentAngleDeg();
+        if ((currentAngleDeg >= MAX_ANGLE_DEG && turretPower > 0) ||
+                (currentAngleDeg<= MIN_ANGLE_DEG && turretPower < 0)) {
+            turretPower = 0;
+        }
+        turret.setPower(turretPower);
+
+        // hood movement -> l1(down), r1(up)
+        double hoodPos = hood.getPosition();
+        if (gp.left_bumper) {hoodPos -= 0.01;}
+        if (gp.right_bumper) {hoodPos += 0.01;}
+        hoodPos = Math.max(MIN_HOOD_POS, Math.min(MAX_HOOD_POS, hoodPos));
+        hood.setPosition(hoodPos);
+
     }
 }
 
