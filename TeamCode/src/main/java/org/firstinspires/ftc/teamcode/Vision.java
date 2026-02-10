@@ -14,8 +14,11 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.FocusControl;
 import org.firstinspires.ftc.vision.VisionPortal;
+import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
+import java.util.List;
+import java.util.Vector;
 import java.util.concurrent.TimeUnit;
 
 @TeleOp
@@ -24,9 +27,14 @@ public class Vision extends LinearOpMode {
     private AprilTagProcessor aprilTagProcessor;
     public WebcamName webcam;
 
-    public boolean visible;
-    public double errorDeg;
-    public long timeMs;
+    // Kishi Variables
+
+    public boolean visible; // Finsihed
+    public double errorDeg; // Possibly Finished?
+    public long timeMs; // Need slight clarification
+
+
+    // Extra Variables if necessary
 
     public Vision(HardwareMap hw) {
         this.webcam = hw.get(WebcamName.class, "webcam");
@@ -113,6 +121,30 @@ public class Vision extends LinearOpMode {
         // #### Note Finish this section after testing (10/02)
         telemetry.addData("State: ", "Running");
         telemetry.update();
+
+        List<AprilTagDetection> detections = aprilTagProcessor.getDetections();
+
+        if (detections.isEmpty()) {
+            visible = false;
+        }
+        else {
+            visible = true;
+        }
+
+        for (AprilTagDetection detection : detections) {
+            if (detection.metadata == null) {
+                continue;
+            }
+
+            telemetry.addData("X: ", detection.ftcPose.x);
+            telemetry.addData("Y: ", detection.ftcPose.y);
+            telemetry.addData("Z: ", detection.ftcPose.z);
+
+            telemetry.addData("Bearing: ", detection.ftcPose.bearing);
+
+            telemetry.update();
+        }
+
     }
 
     @Override
@@ -137,6 +169,12 @@ public class Vision extends LinearOpMode {
 
         while (opModeIsActive()) {
             scan_April_Tags();
+
+            // Check Kishi Variables
+            telemetry.addData("Visible: ", visible);
+            telemetry.addData("errorDeg: ", errorDeg);
+            telemetry.addData("timeMs: ", timeMs);
+
             sleep(1000);
         }
     }
