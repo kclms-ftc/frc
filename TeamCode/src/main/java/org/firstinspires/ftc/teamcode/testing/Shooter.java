@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.HardwareMapConfig;
@@ -21,13 +22,18 @@ public class Shooter {
     private final Servo feeder;
 
     //flywheelMotor_0 = HardwareMapConfig.shooter_motor_0;
-    double targetVelocity = 1500;
     double F = 0;
     double P = 0;
     double[] stepSizes = {10.0,1.0,0.1,0.01,0.001}; // allows us to increase/decrease PF controller by different levels of sensitivity
     int stepIndex = 1; // starts changing at values of 1 at a time (2nd value in stepSizes)
     double REST_POS = 0.0;
     double PUSH_POS = 0.5; // Adjust until the arm hits the ball correctly
+    double targetRPM = 1500;
+
+    // Telemetry storage variables
+    double actualVelocity0 = 0;
+    double actualVelocity1 = 0;
+    boolean isSpinning = false;
 
     public Shooter(HardwareMap hw){
         this.config = new HardwareMapConfig(hw);
@@ -39,16 +45,18 @@ public class Shooter {
         shooter_0.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
         shooter_1.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
         PIDFCoefficients pidfCoefficients = new PIDFCoefficients(P,0,0,F);
-        // finish this
+        shooter_0.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, pidfCoefficients);
+        shooter_1.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, pidfCoefficients);
 
     }
 
-    public void setRPM(Gamepad gamepad) {
+    public void setRPM(Gamepad gamepad, double target) {
+        this.targetRPM = target;
         double triggerPressure = gamepad.left_trigger;
 
         if (triggerPressure > 0.1){
-            shooter_0.setVelocity(targetVelocity);
-            shooter_1.setVelocity(targetVelocity);
+            shooter_0.setVelocity(targetRPM);
+            shooter_1.setVelocity(targetRPM);
         }else {
             shooter_0.setVelocity(0);
             shooter_1.setVelocity(0);
@@ -56,8 +64,8 @@ public class Shooter {
 
         double actualVelocity0 = shooter_0.getVelocity();
         double actualVelocity1 = shooter_1.getVelocity();
-        double velocityError0 = targetVelocity - actualVelocity0;
-        double velocityError1 = targetVelocity - actualVelocity1;
+        double velocityError0 = targetRPM - actualVelocity0;
+        double velocityError1 = targetRPM - actualVelocity1;
     }
 
     public void stopFlyWheel() {
@@ -67,14 +75,13 @@ public class Shooter {
 
     public void atSpeed() {}
 
-    public void fireOnce() {}
+    public void fireOnce(Gamepad gamepad) { // sets feeder arm
+        ElapsedTime servoTimer = new ElapsedTime();
+        if (gamepad.x) {
+            servoTimer.reset();
+        }
 
-    public void fireMultiple() {}
-
-    public void spinUpAndShoot () {}
-
-    public void setfeederArm(Gamepad gamepad) {
-        if (gamepad.x){
+        if (servoTimer.milliseconds() > 500){
             feeder.setPosition(PUSH_POS);
         } else {
             feeder.setPosition(REST_POS);
@@ -82,30 +89,31 @@ public class Shooter {
 
     }
 
+    // AUTONOMOUS
+    public void spinUpAndShoot () {}
 
-    public void addTelemetry(Telemetry telemetry) {
+
+    public void addShooterTelemetry(Telemetry telemetry) {
         telemetry.addLine("--- FLYWHEEL DIAGNOSTICS ---");
-        telemetry.addData("Target Flywheel RPM: ",  targetVelocity);
-        telemetry.addData("Motor State", triggerPressure > 0.1 ? "SPINNING" : "STOPPED");
-        telemetry.addData("Actual Velocity Shooter_0", "%.2f ticks/s", actualVelocity);
-        telemetry.addData("Actual Velocity Shooter_1", );
+        telemetry.addData("Target Flywheel RPM: ", targetRPM);
+        telemetry.addData("Motor State: ", isSpinning ? "SPINNING" : "STOPPED");
+        telemetry.addData("Actual Velocity 0: ", "%.2f ticks/s", actualVelocity0);
+        telemetry.addData("Actual Velocity 1: ", "%.2f ticks/s", actualVelocity1);
 
         telemetry.addLine("--- SERVO ARM STATUS ---");
         telemetry.addData("Servo Pos: ", feeder.getPosition());
 
-        // Error shows how much the motor is lagging behind the target
-        telemetry.addData("Velocity Error", "%.2f ticks/s", velocityError);
+        // Error shows how much the motor are lagging behind the target
+        //telemetry.addData("Velocity Error Shooter_0", velocityError);
 
-        // Power shows how hard the Hub is working (0.0 to 1.0) to hit that speed
-        telemetry.addData("Motor Power Usage", "%.2f%%", flywheelMotor.getPower() * 100);
-
-        // Update the screen at the end of every loop
-        telemetry.update();
+        // telemetry.update() not required!
     }
 
 }
 
-/* PF controller
+/* PF controller (Brogan video) - finish PIDF
 Two different target velocities to toggle between - 900rpm, 1500rpm
+
+check how to access actualvelocity variables after updated in setRPM
 
  */
