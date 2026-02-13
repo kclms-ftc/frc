@@ -60,6 +60,10 @@ public class Drivetrain extends LinearOpMode {
             drive = Math.max(-1.0, Math.min(1.0, drive));
             strafe = Math.max(-1.0, Math.min(1.0, strafe));
 
+            if (Math.abs(drive) < 0.05) drive = 0;
+            if (Math.abs(strafe) < 0.05) strafe = 0;
+            if (Math.abs(rotate) < 0.05) rotate = 0;
+
             calculateAndSetWheelPowers(drive, strafe, rotate);
 
             displayTelemetry(drive, strafe, rotate);
