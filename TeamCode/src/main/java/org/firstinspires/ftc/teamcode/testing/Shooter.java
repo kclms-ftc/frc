@@ -58,17 +58,17 @@ public class Shooter {
     public void setRPM(Gamepad gamepad, double target) {
         this.targetRPM = target;
         double triggerPressure = gamepad.left_trigger;
+//
+//      if (triggerPressure > 0.1) {
+//            shooter_0.setVelocity(targetRPM);
+//            shooter_1.setVelocity(targetRPM);
+//        } else {
+//            shooter_0.setVelocity(0);
+//            shooter_1.setVelocity(0);
+//        }
 
-        if (triggerPressure > 0.1) {
-            shooter_0.setVelocity(targetRPM);
-            shooter_1.setVelocity(targetRPM);
-        } else {
-            shooter_0.setVelocity(0);
-            shooter_1.setVelocity(0);
-        }
-
-        double actualVelocity0 = shooter_0.getVelocity();
-        double actualVelocity1 = shooter_1.getVelocity();
+        actualVelocity0 = shooter_0.getVelocity();
+        actualVelocity1 = shooter_1.getVelocity();
         double velocityError0 = targetRPM - actualVelocity0;
         double velocityError1 = targetRPM - actualVelocity1;
 
@@ -127,6 +127,7 @@ public class Shooter {
 
         if (servoTimer.milliseconds() > 500){
             feeder.setPosition(PUSH_POS);
+            feeder.setPosition(REST_POS);
         } else {
             feeder.setPosition(REST_POS);
         }
