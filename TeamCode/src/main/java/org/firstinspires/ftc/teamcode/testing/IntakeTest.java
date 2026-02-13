@@ -56,8 +56,7 @@ public class IntakeTest extends LinearOpMode {
         private DcMotorEx motor;
         private IntakeState state = IntakeState.OFF;
         private ElapsedTime jamTimer = new ElapsedTime();
-
-        // Tune these
+        
         private static final double INTAKE_POWER = 1.0;
         private static final double REVERSE_POWER = -1.0;
         private static final double STALL_VELOCITY = 50; // ticks/sec
