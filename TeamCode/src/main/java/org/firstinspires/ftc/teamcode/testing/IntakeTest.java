@@ -60,7 +60,7 @@ public class IntakeTest extends LinearOpMode {
         // Tune these
         private static final double INTAKE_POWER = 1.0;
         private static final double REVERSE_POWER = -1.0;
-        private static final double STALL_VELOCITY = 50; // ticks/sec
+        private static final double STALL_VELOCITY = 50; // ticks per sec
         private static final double JAM_REVERSE_TIME = 0.5; // seconds
 
         public IntakeController(DcMotorEx motor) {

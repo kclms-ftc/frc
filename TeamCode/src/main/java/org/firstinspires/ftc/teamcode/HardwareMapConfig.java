@@ -5,6 +5,8 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 
+// central hardware map — every subsystem pulls from here
+// names MUST match driver station config exactly
 public class HardwareMapConfig {
 
     public DcMotorEx turret_motor;
@@ -40,3 +42,4 @@ public class HardwareMapConfig {
         webcam = hw.get(WebcamName.class, "webcam");
     }
 }
+// only the control hub, expansion and driver hub need to be synced

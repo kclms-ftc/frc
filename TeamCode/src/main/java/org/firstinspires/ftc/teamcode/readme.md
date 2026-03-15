@@ -1,148 +1,52 @@
-# TeamCode Development Plan & Subsystem Documentation
+# TeamCode Dev Plan
 
-This document outlines the development plan, subsystem responsibilities, and team assignments for the FTC robot code.
+this is the roadmap for the teamcode folder. push this to github every few days.
 
-##  Team Assignments & File Structure
+## who's doing what
+- **`Drivetrain.java`** (KAVAN + DANIEL): mecanum math, field-centric mode, and slowing down for precision.
+- **`Intake.java`** (JESS): the rollers that eat the balls. needs a simple in, out, and off button. make sure it reverses automatically if it gets stuck.
+- **`Turret.java`** (MOYIN + KISHI): spin the turret_motor to point at the apriltag, and use the angle_servo to point it up and down.
+- **`Shooter.java`** (GERGANA): two flywheels (shooter_motor_0 and shooter_motor_1) and a feeder_servo that pushes the balls in.
+- **`Vision.java`** (GEORGE): apriltag pipeline to tell the turret where to point.
+- **`TeleOpMain.java`** (TEAM): tie everything to the gamepads.
+- **`AutoMain.java`** (TEAM): the auto routines for driving and scoring.
 
-The following files are targeted for completion/update by the end of the week. Updates should be pushed to GitHub every 2-3 days.
+## hardware map rules
+check `HardwareMapConfig.java` to see what names to use. if you use `hardwareMap.get("left_motor")` and it isnt in there it will crash the whole OpMode.
 
-| File                  | Primary Assignee(s)                  | Key Responsibilities                                             |
-| :-------------------- | :----------------------------------- | :--------------------------------------------------------------- |
-| **`Drivetrain.java`** | **Kavan + Daniel**                   | Mecanum control, speed modes, field-centric drive.               |
-| **`Intake.java`**     | **Jess**                             | 3 states: In, Out, Stop. Jam protection.                         |
-| **`Turret.java`**     | **Moyin** (motor), **Kishi** (servo) | Turret rotation (`turret_motor`), angle control (`angle_servo`). |
-| **`Shooter.java`**    | **Gergana**                          | Flywheels (`shooter_motor_0/1`), feeder (`feeder_servo`).        |
-| **`Vision.java`**     | **George**                           | AprilTag detection, target offsets.                              |
-| **`TeleOpMain.java`** | **Team**                             | Driver control layer, mapping inputs to subsystem methods.       |
-| **`AutoMain.java`**   | **Team**                             | Autonomous sequence runner.                                      |
+- wheels: `wheel_0` (NE), `wheel_1` (SE), `wheel_2` (SW), `wheel_3` (NW) 
+- turret: `turret_motor` and `angle_servo`
+- intake: `intake_motor`
+- shooter: `shooter_motor_0`, `shooter_motor_1`, `feeder_servo`
+- camera is literally just called `"webcam"`
 
-> **Development Rule:** If a file does not exist, create a branch with its name (e.g., `drivetrain` branch) and create the file there.
+## how things should work
 
----
+### drivetrain
+- telehop: mecanum drive with a slow mode (precision) and fast mode (turbo). use the gyro to make the robot drive straight if the sticks get pushed weirdly. we want brake mode on the motors so we dont slide past the balls.
+- auto: `driveDistance(cm)` and `turnToAngle(deg)`.
 
-##  Hardware Configuration
+### intake
+- hit a button to toggle between intake, eject, and off. 
+- if the motor slows down abruptly, reverse it to spit out the jammed ball.
 
-**Crucial Reference:** [`HardwareMapConfig.java`](./HardwareMapConfig.java)
+### turret
+- needs manual controls but the main focus is locking onto an apriltag so we can score automatically. limit the rotation so we dont rip out the cables.
+- ideally we can press a button to snap it to the sides or front.
 
-Always reference `HardwareMapConfig.java` to match hardware names exactly. This file maps all hardware to software.
+### shooter
+- turn it on and keep it spinning with pidf control (no `setPower`!).
+- the feeder servo should click the balls into the wheel.
+- `spinUpAndShoot(n)` for auto so it waits for the rpm to get high enough.
 
-### Hardware Manifest
+### vision
+- just passing data to the turret and printing to telemetry. no motor stuff here.
 
-- **Drive Motors:** `wheel_0` (NE), `wheel_1` (SE), `wheel_2` (SW), `wheel_3` (NW)
-- **Turret:** `turret_motor` (DcMotorEx), `angle_servo` (Servo)
-- **Intake:** `intake_motor` (DcMotorEx)
-- **Shooter:** `shooter_motor_0`, `shooter_motor_1` (DcMotorEx), `feeder_servo` (Servo)
-- **Sensors:** `webcam` (WebcamName), IMU forms part of the Control Hub.
+## the golden rule
 
----
+1. `HardwareMapConfig` matches the real robot
+2. Subsystems have the heavy lifting
+3. `Robot.java` packages all the subsystems
+4. OpModes use `Robot.java` methods
 
-##  Subsystem Requirements
-
-### 1. Drivetrain (`Drivetrain.java`)
-
-**Purpose:** Controls robot movement for TeleOp and Auto.
-
-- **TeleOp Focus:**
-  - **Control:** Mecanum drive (Strafe + Rotate), Deadzones, Scaling.
-  - **Modes:** Slow/Precision toggle, Normal/Turbo mode.
-  - **Stability:** Heading stabilization (gyro-based).
-  - **Safety:** Zero power behavior (Brake), motor direction config.
-- **Autonomous Focus:**
-  - **Movement:** `driveDistance(cm)`, `turnToAngle(deg)`.
-  - **Trajectory:** Path following.
-  - **Correction:** PID control for heading.
-
-### 2. Intake (`Intake.java`)
-
-**Purpose:** Collects game elements.
-
-- **TeleOp Focus:**
-  - **Control:** Toggle states (In / Out / Stop).
-  - **Protection:** Anti-jam (reverse briefly if stalled).
-- **Key Logic:**
-  - Button press -> `intakeIn()` -> press again -> `intakeOut()` -> press again -> `stop()`.
-
-### 3. Turret (`Turret.java`)
-
-**Purpose:** Controls aiming rotation.
-
-- **TeleOp Focus:**
-  - **Manual:** Stick/Button rotation.
-  - **Safety:** Angle limits (Min/Max to protect wires).
-  - **Presets:** Buttons for Front / Side / Scoring positions.
-  - **Stability:** PID Hold position.
-- **Autonomous Focus:**
-  - **Auto-Aim:** Rotate to known scoring angles or align via vision.
-  - **Locking:** Move only when stable.
-
-### 4. Shooter (`Shooter.java`)
-
-**Purpose:** Controls flywheels and firing mechanism.
-
-- **TeleOp Focus:**
-  - **Spin-up:** Toggle On/Off.
-  - **Control:** PIDF for consistent RPM.
-  - **Firing:** Servo flicker control (`feeder_servo`).
-  - **Presets:** Low/High goal power.
-- **Autonomous Focus:**
-  - **Sequence:** Spin up -> Wait for RPM -> Fire N rings.
-  - **Logic:** `spinUpAndShoot(n)`.
-
-### 5. Camera Scanner / Vision (`Vision.java`)
-
-**Purpose:** Visual processing and telemetry (No motor control).
-
-- **TeleOp Focus:**
-  - **Feedback:** Live telemetry (Target detected, Offset angle).
-  - **Pipeline:** Switch between AprilTags/Color detection.
-- **Autonomous Focus:**
-  - **Detection:** Identification of target zones/tags.
-  - **Localization:** Pose estimation via tags.
-  - **Alignment:** Calculate offsets for Turret.
-
----
-
-##  Architecture & Best Practices
-
-### The "Correct" Dependency Stack
-
-1.  **Hardware Level:** Motors, Servos, Sensors (HardwareMap).
-2.  **Subsystem Level:** `Drivetrain`, `Intake`, `Turret`, `Shooter`, `Vision`.
-3.  **Robot Container:** `Robot.java` (Holds instances of all subsystems).
-4.  **OpMode Level:** `TeleOpMain`, `AutoMain` (Calls Robot methods).
-
-###  TeleOp Rules
-
-- **NEVER** do `motor.setPower(...)` inside TeleOp.
-- **ALWAYS** call subsystem methods: `robot.intake.intakeIn()`.
-- TeleOp is for **Driver Control Logic Only**.
-
-###  Robot.java Structure
-
-```java
-public class Robot {
-    public Drivetrain drivetrain;
-    public Intake intake;
-    public Turret turret;
-    public Shooter shooter;
-    public Vision vision;
-
-    public Robot(HardwareMap hw) {
-        drivetrain = new Drivetrain(hw);
-        intake = new Intake(hw);
-        turret = new Turret(hw);
-        shooter = new Shooter(hw);
-        vision = new Vision(hw);
-    }
-}
-```
-
-### Summary Table
-
-| Subsystem      | TeleOp Focus                   | Autonomous Focus            |
-| :------------- | :----------------------------- | :-------------------------- |
-| **Drivetrain** | Driver control + Field-centric | Path following + Odometry   |
-| **Intake**     | Button control + Anti-jam      | Pickup sequences            |
-| **Turret**     | Manual aim + Presets           | Auto aim + Vision lock      |
-| **Shooter**    | RPM control + Toggle           | Shoot sequences + Timing    |
-| **Vision**     | Telemetry + Assist             | Detection + Decision making |
+**DO NOT PUT `motor.setPower()` IN `TeleOpMain.java`.**  use `robot.intake.intakeIn()` instead. keep all the logic organized.
