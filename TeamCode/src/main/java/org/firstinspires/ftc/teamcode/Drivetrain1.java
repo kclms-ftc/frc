@@ -7,7 +7,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 //   NW(3) ---- NE(0)
 //     |  ROBOT   |
 //   SW(2) ---- SE(1)
-public class Drivetrain {
+public class Drivetrain1 {
 
     public enum SpeedMode {
         NORMAL,
@@ -17,13 +17,13 @@ public class Drivetrain {
 
     private static final double NORMAL_SPEED    = 1.0;
     private static final double PRECISION_SPEED = 0.3;
-    private static final double TURBO_SPEED     = 1.0;
+    private static final double  TURBO_SPEED     = 1.0;
 
     private final HardwareMapConfig robot;
     private SpeedMode speedMode;
     private double speedMultiplier;
 
-    public Drivetrain(HardwareMapConfig robot) {
+    public Drivetrain1(HardwareMapConfig robot) {
         this.robot = robot;
 
         // right side forward, left side reversed

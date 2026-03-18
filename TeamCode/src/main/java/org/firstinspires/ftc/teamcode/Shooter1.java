@@ -11,7 +11,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 // shooting mechanism — flywheels and a servo that feeds the balls
 // we use setVelocity instead of setPower to make sure the rpm doesnt drop when batery is low
 // the trajectory of the balls needs to be exactly the same every time
-public class Shooter {
+public class Shooter1 {
 
     // presets for the high and low goal
     public static final double VELOCITY_HIGH = 1800;
@@ -48,7 +48,7 @@ public class Shooter {
     private final ElapsedTime feederTimer    = new ElapsedTime();
     private final ElapsedTime shotCooldown   = new ElapsedTime();
 
-    public Shooter(HardwareMapConfig robot) {
+    public Shooter1(HardwareMapConfig robot) {
         this.motor0 = robot.shooter_motor_0;
         this.motor1 = robot.shooter_motor_1;
         this.feeder = robot.feeder_servo;

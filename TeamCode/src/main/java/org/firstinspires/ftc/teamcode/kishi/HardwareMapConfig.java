@@ -1,13 +1,15 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.kishi;
 
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 
 // central hardware map — every subsystem pulls from here
 // names MUST match driver station config exactly
 public class HardwareMapConfig {
+
     public DcMotorEx turret_motor;
 
     public DcMotorEx intake_motor;
@@ -24,7 +26,6 @@ public class HardwareMapConfig {
     public HardwareMapConfig(HardwareMap hw) {
 
         turret_motor = hw.get(DcMotorEx.class, "turret_motor");
-
         intake_motor = hw.get(DcMotorEx.class, "intake_motor");
 
         shooter_motor_0 = hw.get(DcMotorEx.class, "shooter_motor_0");
@@ -35,7 +36,7 @@ public class HardwareMapConfig {
         wheel_2 = hw.get(DcMotorEx.class, "wheel_2");
         wheel_3 = hw.get(DcMotorEx.class, "wheel_3");
 
-//        feeder_servo = hw.get(Servo.class, "feeder_servo");
+        feeder_servo = hw.get(Servo.class, "feeder_servo");
         angle_servo = hw.get(Servo.class, "angle_servo");
 
         webcam = hw.get(WebcamName.class, "webcam");

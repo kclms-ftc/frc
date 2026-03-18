@@ -10,7 +10,6 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 // uses a simple PD loop with bearing as the error
 // make sure to tune kP before kD
 public class Turret {
-
     // gains for the pd loop. kD is super sensetive so change it slowly
     private double kP = 0.013;
     private double kD = 0.00001;

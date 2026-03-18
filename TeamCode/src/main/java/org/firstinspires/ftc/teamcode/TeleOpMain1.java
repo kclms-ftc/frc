@@ -9,14 +9,14 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 // DO NOT put any motor.setPower nonsense here
 // just mapping inputs to the subsystem methods
 @TeleOp(name = "TeleOp Main", group = "Competition")
-public class TeleOpMain extends LinearOpMode {
+public class TeleOpMain1 extends LinearOpMode {
 
     // aiming tag
     private static final int TARGET_TAG_ID = 20;
 
     @Override
     public void runOpMode() {
-        Robot robot = new Robot(hardwareMap, true);   // live preview enabled
+        Robot1 robot = new Robot1(hardwareMap, true);   // live preview enabled
         ElapsedTime runtime = new ElapsedTime();
 
         boolean prevY          = false;
@@ -54,11 +54,11 @@ public class TeleOpMain extends LinearOpMode {
                     gamepad1.right_stick_x);
 
             if (gamepad1.right_bumper) {
-                robot.drivetrain.setSpeedMode(Drivetrain.SpeedMode.PRECISION);
+                robot.drivetrain.setSpeedMode(Drivetrain1.SpeedMode.PRECISION);
             } else if (gamepad1.left_bumper) {
-                robot.drivetrain.setSpeedMode(Drivetrain.SpeedMode.TURBO);
+                robot.drivetrain.setSpeedMode(Drivetrain1.SpeedMode.TURBO);
             } else {
-                robot.drivetrain.setSpeedMode(Drivetrain.SpeedMode.NORMAL);
+                robot.drivetrain.setSpeedMode(Drivetrain1.SpeedMode.NORMAL);
             }
 
             // intake binds on operator gamepad

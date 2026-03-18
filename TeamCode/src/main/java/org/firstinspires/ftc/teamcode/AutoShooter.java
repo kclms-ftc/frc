@@ -13,10 +13,10 @@ public class AutoShooter extends LinearOpMode {
     // tag to track. might change next season
     private static final int TARGET_TAG_ID = 20;
 
-    // shoot this many balls
+    // shoot this many ballsFired
     private static final int BALLS_TO_SHOOT = 3;
 
-    private static final double SHOOT_VELOCITY = Shooter.VELOCITY_HIGH;
+    private static final double SHOOT_VELOCITY = Shooter1.VELOCITY_HIGH;
 
     // do we need to check the aim and rpm again after the first shot?
     private static final boolean CHECK_BETWEEN_SHOTS = true;
@@ -43,7 +43,7 @@ public class AutoShooter extends LinearOpMode {
         HardwareMapConfig config = new HardwareMapConfig(hardwareMap);
         Vision  vision  = new Vision(config, false);   // false means NO livedview so we save processing time
         Turret  turret  = new Turret(config);
-        Shooter shooter = new Shooter(config);
+        Shooter1 shooter = new Shooter1(config);
 
         Phase currentPhase = Phase.SPIN_UP;
         int   ballsFired   = 0;
