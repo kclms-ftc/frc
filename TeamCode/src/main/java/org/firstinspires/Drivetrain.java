@@ -76,10 +76,11 @@ public class Drivetrain {
         rotate = applyDeadzone(rotate);
 
         // Mecanum math — each wheel gets a unique combination
-        double pNE = drive + strafe - rotate;
-        double pSE = drive - strafe - rotate;
-        double pSW = drive + strafe + rotate;
-        double pNW = drive - strafe + rotate;
+        // Corrected math to be coherent and match standard mecanum directions
+        double pNW = drive + strafe + rotate;
+        double pNE = drive - strafe - rotate;
+        double pSW = drive - strafe + rotate;
+        double pSE = drive + strafe - rotate;
 
         // Normalize so no value exceeds 1.0 (preserves direction ratios)
         double max = Math.max(1.0, Math.max(

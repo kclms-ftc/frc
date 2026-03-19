@@ -27,6 +27,9 @@ public class HardwareMapConfig {
     // --- Intake --- (single roller motor)
     public DcMotorEx intake_motor;
 
+    // --- Turret --- (rotation motor)
+    public DcMotorEx turret_motor;
+
     public HardwareMapConfig(HardwareMap hw) {
 
         // Drivetrain
@@ -42,5 +45,8 @@ public class HardwareMapConfig {
 
         // Intake
         intake_motor = hw.get(DcMotorEx.class, "intake_motor");
+
+        // Turret
+        turret_motor = hw.get(DcMotorEx.class, "turret_motor");
     }
 }

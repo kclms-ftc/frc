@@ -20,6 +20,7 @@ public class Robot {
     public final Drivetrain drivetrain;
     public final Shooter    shooter;
     public final Intake     intake;
+    public final Turret     turret;
 
     public Robot(HardwareMap hw) {
         HardwareMapConfig config = new HardwareMapConfig(hw);
@@ -27,6 +28,7 @@ public class Robot {
         drivetrain = new Drivetrain(config);
         shooter    = new Shooter(config);
         intake     = new Intake(config);
+        turret     = new Turret(config);
     }
 
     /** Cut power to all active subsystems. Call at end of OpMode. */
@@ -34,6 +36,7 @@ public class Robot {
         drivetrain.stop();
         shooter.stop();
         intake.stop();
+        turret.stop();
     }
 
     /** Push all subsystem data to Driver Station in one call. */
@@ -41,6 +44,7 @@ public class Robot {
         drivetrain.displayTelemetry(t);
         shooter.displayTelemetry(t);
         intake.displayTelemetry(t);
+        turret.displayTelemetry(t);
         t.update();
     }
 }

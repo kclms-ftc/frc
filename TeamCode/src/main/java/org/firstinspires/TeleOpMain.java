@@ -16,17 +16,30 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
  *   Right trigger >50%  → spin up flywheels
  *   A button            → fire one ball (non-blocking)
  *
- * GAMEPAD 2 (operator):
- *   Right bumper (hold) → intake (pull balls in)
- *   Left bumper (hold)  → eject (clear jam)
- *   Neither             → intake stopped
+ * GAMEPAD 1 (driver/operator):
+ *   Left stick Y        → forward / backward (drivetrain)
+ *   Left stick X        → strafe left / right (drivetrain)
+ *   Right stick X       → rotate (drivetrain)
+ *   D-Pad Down          → PRECISION speed (30%)
+ *   D-Pad Up            → TURBO speed (100%)
+ *   (Neither)           → NORMAL speed (65%)
+ *   Right trigger >50%  → spin up flywheels (shooter)
+ *   A button            → fire one ball (non-blocking)
+ *   Left bumper (hold)  → rotate turret left (counter-clockwise)
+ *   Right bumper (hold) → rotate turret right (clockwise)
+ *   Y button            → cycle intake (OFF -> INTAKE -> EJECT)
  */
-@TeleOp(name = "TeleOp — Drivetrain + Shooter + Intake")
+@TeleOp(name = "TeleOp — Single Gamepad")
 public class TeleOpMain extends LinearOpMode {
 
     private static final double JOYSTICK_DEADZONE = 0.05;
 
     private Robot robot;
+
+    // Intake state machine
+    private enum IntakeState { OFF, INTAKE, EJECT }
+    private IntakeState intakeState = IntakeState.OFF;
+    private boolean lastY = false;
 
     @Override
     public void runOpMode() {
@@ -40,13 +53,32 @@ public class TeleOpMain extends LinearOpMode {
 
         while (opModeIsActive()) {
 
-            // ---- 1. INTAKE (Gamepad 2) ----
-            if (gamepad2.right_bumper) {
-                robot.intake.intake();
-            } else if (gamepad2.left_bumper) {
-                robot.intake.eject();
+            // ---- 1. INTAKE (Gamepad 1 Y Toggle) ----
+            boolean currentY = gamepad1.y;
+            if (currentY && !lastY) {
+                if (intakeState == IntakeState.OFF) {
+                    intakeState = IntakeState.INTAKE;
+                } else if (intakeState == IntakeState.INTAKE) {
+                    intakeState = IntakeState.EJECT;
+                } else {
+                    intakeState = IntakeState.OFF;
+                }
+            }
+            lastY = currentY;
+
+            switch (intakeState) {
+                case INTAKE: robot.intake.intake(); break;
+                case EJECT:  robot.intake.eject(); break;
+                case OFF:    robot.intake.stop(); break;
+            }
+
+            // ---- 5. TURRET (Gamepad 1 Bumpers L1/R1) ----
+            if (gamepad1.right_bumper) {
+                robot.turret.rotateRight();
+            } else if (gamepad1.left_bumper) {
+                robot.turret.rotateLeft();
             } else {
-                robot.intake.stop();
+                robot.turret.stop();
             }
 
             // ---- 2. DRIVE (Gamepad 1) ----
@@ -56,10 +88,10 @@ public class TeleOpMain extends LinearOpMode {
 
             robot.drivetrain.drive(drive, strafe, rotate);
 
-            // Speed mode
-            if (gamepad1.left_bumper) {
+            // Speed mode (Gamepad 1 D-Pad)
+            if (gamepad1.dpad_down) {
                 robot.drivetrain.setSpeedMode(Drivetrain.SpeedMode.PRECISION);
-            } else if (gamepad1.right_bumper) {
+            } else if (gamepad1.dpad_up) {
                 robot.drivetrain.setSpeedMode(Drivetrain.SpeedMode.TURBO);
             } else {
                 robot.drivetrain.setSpeedMode(Drivetrain.SpeedMode.NORMAL);
