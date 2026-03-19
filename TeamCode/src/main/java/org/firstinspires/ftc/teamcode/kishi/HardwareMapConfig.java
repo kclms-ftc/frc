@@ -4,57 +4,43 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
-// import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;  // not used — webcam commented out
-// import org.firstinspires.ftc.teamcode.GoBildaPinpointDriver;                  // not used — Pinpoint commented out
-
-// central hardware map — every subsystem pulls from here
-// names MUST match driver station config exactly
+/**
+ * HardwareMapConfig — the only place hw.get() is ever called.
+ *
+ * DS config names must match these strings exactly.
+ * All subsystems receive this object in their constructor
+ * and pull references from it — they never call hw.get() themselves.
+ */
 public class HardwareMapConfig {
 
-    // public DcMotorEx turret_motor;  // not needed for drivetrain/shooter/intake
+    // --- Drivetrain --- (mecanum, 4 motors)
+    public DcMotorEx wheel_0;  // front-right (NE)
+    public DcMotorEx wheel_1;  // back-right  (SE)
+    public DcMotorEx wheel_2;  // back-left   (SW)
+    public DcMotorEx wheel_3;  // front-left  (NW)
 
-    public DcMotorEx intake_motor;         // intake roller motor
+    // --- Shooter --- (dual flywheel + feeder servo)
+    public DcMotorEx shooter_motor_0;
+    public DcMotorEx shooter_motor_1;
+    public Servo     feeder_servo;
 
-    public DcMotorEx shooter_motor_0, shooter_motor_1;  // flywheel pair
-
-    public DcMotorEx wheel_0, wheel_1, wheel_2, wheel_3;  // mecanum drive wheels
-
-    public Servo feeder_servo;             // pushes balls into flywheel
-    // public Servo angle_servo;           // not needed — shooter angle not in use
-
-    // public WebcamName webcam;           // not needed — vision not in use
-
-    // Pinpoint + odometry — uncomment when you want position tracking
-    // public GoBildaPinpointDriver pinpoint;
+    // --- Intake --- (single roller motor)
+    public DcMotorEx intake_motor;
 
     public HardwareMapConfig(HardwareMap hw) {
 
-        // turret_motor = hw.get(DcMotorEx.class, "turret_motor");  // commented out — not in use
-
-        intake_motor = hw.get(DcMotorEx.class, "intake_motor");
-
-        shooter_motor_0 = hw.get(DcMotorEx.class, "shooter_motor_0");
-        shooter_motor_1 = hw.get(DcMotorEx.class, "shooter_motor_1");
-
+        // Drivetrain
         wheel_0 = hw.get(DcMotorEx.class, "wheel_0");
         wheel_1 = hw.get(DcMotorEx.class, "wheel_1");
         wheel_2 = hw.get(DcMotorEx.class, "wheel_2");
         wheel_3 = hw.get(DcMotorEx.class, "wheel_3");
 
-        feeder_servo = hw.get(Servo.class, "feeder_servo");
-        // angle_servo = hw.get(Servo.class, "angle_servo");  // commented out — not in use
+        // Shooter
+        shooter_motor_0 = hw.get(DcMotorEx.class, "shooter_motor_0");
+        shooter_motor_1 = hw.get(DcMotorEx.class, "shooter_motor_1");
+        feeder_servo    = hw.get(Servo.class, "feeder_servo");
 
-        // webcam = hw.get(WebcamName.class, "webcam");  // commented out — vision not in use
-
-        // --- Pinpoint odometry (uncomment to re-enable) ---
-        // pinpoint = hw.get(GoBildaPinpointDriver.class, "pinpoint");
-        // pinpoint.setOffsets(-84.0, -168.0);
-        // pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
-        // pinpoint.setEncoderDirections(
-        //     GoBildaPinpointDriver.EncoderDirection.FORWARD,
-        //     GoBildaPinpointDriver.EncoderDirection.FORWARD
-        // );
-        // pinpoint.resetPosAndIMU();
+        // Intake
+        intake_motor = hw.get(DcMotorEx.class, "intake_motor");
     }
 }
-// only the control hub, expansion and driver hub need to be synced

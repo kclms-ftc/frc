@@ -6,326 +6,166 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 /**
- * Shooter.java — Flywheel Shooter Subsystem
+ * Shooter — dual flywheel + feeder servo subsystem.
  *
- * HOW IT WORKS:
- * -------------
- * Two flywheel motors spin in opposite directions, creating a pair of
- * counter-rotating wheels. When a ball passes between them, friction
- * launches it forward. Speed consistency matters a lot — too slow and
- * the ball under-shoots; too fast and it over-shoots.
+ * FLYWHEEL:
+ *   Two motors spin in opposite directions to grip and launch balls.
+ *   Velocity is set in ticks/sec using RUN_USING_ENCODER mode with
+ *   a PIDF controller so the speed stays consistent under load.
  *
- * To get consistent speed we use VELOCITY CONTROL (setVelocity) instead
- * of raw power (setPower). The motor controller runs a PIDF feedback loop
- * internally to hold the flywheel at the exact RPM we request.
+ * FEEDER:
+ *   A servo pushes a ball into the spinning flywheels.
+ *   fireBallNonBlocking() starts the push; updateFeeder() must be
+ *   called every loop to advance the state machine without blocking.
  *
- * The FEEDER SERVO pushes individual balls into the spinning wheels.
- * It uses a non-blocking state machine so the main loop never stalls.
- *
- * HARDWARE INDEPENDENCE:
- * ----------------------
- * This class does NOT call HardwareMap.get() anywhere. All motor and
- * servo references come in from HardwareMapConfig via the constructor.
- * If a device name changes, only HardwareMapConfig.java needs updating.
+ * READY CHECK:
+ *   isReadyToFire() returns true when both motors are within
+ *   READY_TOLERANCE ticks/sec of the target — safe to fire.
  */
 public class Shooter {
 
-    // ----------------------------------
-    // CONSTANTS / PRESETS
-    // ----------------------------------
+    // Flywheel target velocity (ticks per second at the motor shaft)
+    // ~1800 ticks/sec works well for high goal. Tune for your motor + game.
+    private static final double TARGET_VELOCITY = 1800;
 
-    // Flywheel target velocities in encoder ticks per second (not RPM).
-    // HIGH goal is farther away so it needs more velocity.
-    // LOW goal can be a softer lob.
-    // Tune these based on actual field testing.
-    public static final double VELOCITY_HIGH = 1800;  // for high goal shots
-    public static final double VELOCITY_LOW  = 1350;  // for low goal shots
+    // How close to target velocity before we allow a shot
+    private static final double READY_TOLERANCE = 60;  // ticks/sec
 
-    // How close the flywheel speed must be to target before the robot
-    // considers it "ready to fire". Too tight = always waiting. Too loose = bad aim.
-    private static final double VELOCITY_TOLERANCE = 60;
-
-    // PIDF TUNING
-    // -----------
-    // The motor controller uses this PIDF loop to hold flywheel speed:
-    //
-    //   F (feedforward) — sets a base power proportional to the target velocity.
-    //                      Most of the work happens here. Without it, P/I/D
-    //                      would have to do all the heavy lifting and lag badly.
-    //   P (proportional) — corrects based on current error (target - actual).
-    //                       Larger P = faster correction, but can oscillate.
-    //   I (integral) — corrects for sustained small errors over time.
-    //                   We leave this at 0 to avoid windup on flywheels.
-    //   D (derivative) — dampens rapid changes. Also 0 here for simplicity.
-    //
-    // These values were tuned empirically. F=13.7 was found by measuring
-    // the motor's actual tick-per-second rate at known power levels.
+    // PIDF coefficients for velocity control
+    // These are starting values — tune p/f if motor doesn't hold speed
+    private static final double PIDF_P = 35;
+    private static final double PIDF_I = 0;
+    private static final double PIDF_D = 0;
     private static final double PIDF_F = 13.7;
-    private static final double PIDF_P = 30.0;
-    private static final double PIDF_I = 0.0;
-    private static final double PIDF_D = 0.0;
 
-    // FEEDER SERVO POSITIONS
-    // Position 0.0 = retracted (holding ball back)
-    // Position 0.55 = pushed forward (shoving ball into flywheel gap)
-    // Values are 0.0–1.0 mapping to the servo's full range of motion.
-    private static final double FEEDER_RETRACT = 0.0;
-    private static final double FEEDER_PUSH    = 0.55;
+    // Feeder servo positions
+    private static final double FEEDER_RETRACTED = 0.0;
+    private static final double FEEDER_EXTENDED  = 0.5;
 
-    // FEEDER TIMING
-    // FEEDER_HOLD_MS  = how long to hold the servo in the push position
-    //                   (ball needs time to travel through the flywheel)
-    // SHOT_INTERVAL_MS = minimum gap between shots to prevent jamming
-    //                    (includes push time + retract time + brief wait)
-    private static final long FEEDER_HOLD_MS   = 180;
-    private static final long SHOT_INTERVAL_MS = 350;
+    // How long the feeder stays extended before retracting (ms)
+    private static final double FEEDER_PUSH_MS = 200;
 
-    // ----------------------------------
-    // MEMBER VARIABLES
-    // ----------------------------------
+    private final DcMotorEx motor0, motor1;
+    private final Servo     feeder;
 
-    // Flywheel motors
-    private final DcMotorEx motor0;  // Left or right motor
-    private final DcMotorEx motor1;  // Opposite motor to grip ball
+    private double currentTarget = 0;
 
-    // Servo that pushes balls into flywheels
-    private final Servo feeder;
-
-    // Current target velocity (RPM) of the flywheels
-    private double targetVelocity = 0;
-
-    // True if flywheel motors are spinning
-    private boolean spinning = false;
-
-    // ----------------------------------
-    // FEEDER STATE MACHINE
-    // ----------------------------------
-
-    // Feeder states:
-    // IDLE = servo is waiting
-    // PUSHING = servo is pushing a ball
-    // RETRACTING = servo returning to retracted position
+    // Feeder state machine
     private enum FeederState { IDLE, PUSHING, RETRACTING }
-
     private FeederState feederState = FeederState.IDLE;
+    private final ElapsedTime feederTimer = new ElapsedTime();
 
-    // Timers to track servo movement and shot cooldown
-    private final ElapsedTime feederTimer  = new ElapsedTime();  // Tracks current push/retract duration
-    private final ElapsedTime shotCooldown = new ElapsedTime();  // Tracks time between shots
-
-    // ----------------------------------
-    // CONSTRUCTOR
-    // ----------------------------------
-
-    /**
-     * Constructor — receives pre-built hardware config.
-     * This class NEVER calls hardwareMap.get() directly.
-     * All hardware access goes through the passed-in HardwareMapConfig object.
-     *
-     * @param robot Shared HardwareMapConfig populated by Robot.java
-     */
     public Shooter(HardwareMapConfig robot) {
+        motor0 = robot.shooter_motor_0;
+        motor1 = robot.shooter_motor_1;
+        feeder = robot.feeder_servo;
 
-        // Pull motor and servo references out of the config.
-        // After this constructor, we only use these local references.
-        this.motor0 = robot.shooter_motor_0;
-        this.motor1 = robot.shooter_motor_1;
-        this.feeder = robot.feeder_servo;
-
-        // MOTOR DIRECTIONS
-        // The two flywheel motors face each other (or are geared oppositely).
-        // Setting one FORWARD and one REVERSE makes both wheels spin INWARD
-        // so the ball gets grabbed from both sides and launched.
-        // If both are FORWARD the ball just gets deflected instead of launched.
+        // Motors spin opposite directions to grip the ball from both sides
         motor0.setDirection(DcMotorSimple.Direction.FORWARD);
         motor1.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        // VELOCITY CONTROL MODE
-        // RUN_USING_ENCODER enables the motor controller's built-in PID.
-        // This is different from the drivetrain, which uses RUN_WITHOUT_ENCODER.
-        // We need this because flywheel accuracy depends on consistent RPM,
-        // not just consistent power (power changes as battery drains).
+        motor0.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motor1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        // RUN_USING_ENCODER lets us set velocity instead of raw power
         motor0.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        // ZERO POWER BEHAVIOR: FLOAT
-        // When we stop the motors we let them coast to a halt.
-        // BRAKE would cause mechanical stress on the flywheel gears/shaft
-        // when coming down from high speed. FLOAT is safer here.
-        motor0.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-        motor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-
-        // APPLY PIDF COEFFICIENTS
-        // Feed them to both motors for the RUN_USING_ENCODER mode.
-        // Same coefficients on both since the motors are identical hardware.
+        // Tune the internal PIDF so velocity stays locked under load
         PIDFCoefficients pidf = new PIDFCoefficients(PIDF_P, PIDF_I, PIDF_D, PIDF_F);
         motor0.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidf);
         motor1.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidf);
 
-        // Ensure feeder is fully retracted on startup.
-        // If it powered on mid-push it could jam the first ball.
-        feeder.setPosition(FEEDER_RETRACT);
+        motor0.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        motor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
-        // Reset cooldown so the robot can fire immediately on the first shot
-        // (no need to wait 350ms for the very first trigger press).
-        shotCooldown.reset();
+        // Start feeder retracted
+        feeder.setPosition(FEEDER_RETRACTED);
     }
 
     // ----------------------------------
-    // SPINNING METHODS
+    // FLYWHEEL CONTROL
     // ----------------------------------
 
-    // Spin up flywheels to specific velocity
-    public void spinUp(double velocity) {
-        targetVelocity = velocity;
-        motor0.setVelocity(velocity);
-        motor1.setVelocity(velocity);
-        spinning = true; // mark that flywheels are spinning
-    }
-
-    // Spin up to default high goal velocity
+    /** Spin flywheels up to shooting speed. */
     public void spinUp() {
-        spinUp(VELOCITY_HIGH);
+        setVelocity(TARGET_VELOCITY);
     }
 
-    // Stop flywheels
+    /** Stop flywheels (coast to zero). */
     public void spinDown() {
-        motor0.setVelocity(0);
-        motor1.setVelocity(0);
-        targetVelocity = 0;
-        spinning = false;
+        setVelocity(0);
     }
 
-    // Toggle flywheel spinning (on/off)
-    public void toggleSpin() {
-        if (spinning) spinDown();
-        else spinUp();
+    /** Set a custom velocity target (ticks/sec). */
+    public void setVelocity(double ticksPerSec) {
+        currentTarget = ticksPerSec;
+        motor0.setVelocity(ticksPerSec);
+        motor1.setVelocity(ticksPerSec);
     }
 
-    // ----------------------------------
-    // READINESS CHECK
-    // ----------------------------------
-
-    // Returns true if flywheels are up to speed and ready to fire
+    /** True when both motors are within tolerance of the target. Safe to fire. */
     public boolean isReadyToFire() {
-        if (!spinning || targetVelocity == 0) return false;
-
-        double v0 = motor0.getVelocity();
-        double v1 = motor1.getVelocity();
-
-        // Check that both motors are within tolerance of target velocity
-        return Math.abs(v0 - targetVelocity) < VELOCITY_TOLERANCE
-                && Math.abs(v1 - targetVelocity) < VELOCITY_TOLERANCE;
-    }
-
-    // Get average velocity of both flywheels
-    public double getAverageVelocity() {
-        return (motor0.getVelocity() + motor1.getVelocity()) / 2.0;
+        if (currentTarget == 0) return false;
+        double err0 = Math.abs(motor0.getVelocity() - currentTarget);
+        double err1 = Math.abs(motor1.getVelocity() - currentTarget);
+        return err0 < READY_TOLERANCE && err1 < READY_TOLERANCE;
     }
 
     // ----------------------------------
-    // BLOCKING FIRE (for autonomous)
+    // FEEDER (non-blocking)
     // ----------------------------------
 
-    // Pushes ball and waits (blocking)
-    // DO NOT USE IN TELEOP
-    public void fireBallBlocking() {
-
-        // Push ball into flywheel
-        feeder.setPosition(FEEDER_PUSH);
-
-        try { Thread.sleep(FEEDER_HOLD_MS); }  // wait while ball moves
-        catch (InterruptedException ignored) { Thread.currentThread().interrupt(); }
-
-        // Retract feeder
-        feeder.setPosition(FEEDER_RETRACT);
-
-        try { Thread.sleep(SHOT_INTERVAL_MS - FEEDER_HOLD_MS); }  // wait for shot cooldown
-        catch (InterruptedException ignored) { Thread.currentThread().interrupt(); }
-    }
-
-    // ----------------------------------
-    // NON-BLOCKING FIRE (for teleop)
-    // ----------------------------------
-
-    // Starts firing sequence if feeder is idle and cooldown passed
+    /**
+     * Start the feeder push cycle (non-blocking).
+     * Call updateFeeder() every loop to advance the state machine.
+     * Does nothing if feeder is already mid-cycle.
+     */
     public void fireBallNonBlocking() {
-
-        // Only fire if feeder is not already moving
-        if (feederState != FeederState.IDLE) return;
-
-        // Only fire if cooldown is complete
-        if (shotCooldown.milliseconds() < SHOT_INTERVAL_MS) return;
-
-        // Start push phase
-        feeder.setPosition(FEEDER_PUSH);
-        feederTimer.reset();
-        feederState = FeederState.PUSHING;
+        if (feederState == FeederState.IDLE) {
+            feeder.setPosition(FEEDER_EXTENDED);
+            feederTimer.reset();
+            feederState = FeederState.PUSHING;
+        }
     }
 
-    // Progress feeder state machine — MUST be called every loop iteration.
-    // This is how non-blocking timing works:
-    //   Instead of Thread.sleep() (which freezes everything), we check
-    //   how much time has passed since the last state change and advance
-    //   the state when enough time has elapsed.
-    //
-    //   IDLE → (fireBallNonBlocking called) → PUSHING → RETRACTING → IDLE
+    /**
+     * Advances the feeder state machine.
+     * MUST be called every loop or the feeder will never retract.
+     */
     public void updateFeeder() {
-        switch (feederState) {
-
-            case PUSHING:
-                // Ball is being pushed. Wait for FEEDER_HOLD_MS to elapse.
-                // Once done, retract and start timing the retraction phase.
-                if (feederTimer.milliseconds() >= FEEDER_HOLD_MS) {
-                    feeder.setPosition(FEEDER_RETRACT);
-                    feederTimer.reset();
-                    feederState = FeederState.RETRACTING;
-                }
-                break;
-
-            case RETRACTING:
-                // Wait for the remaining cooldown (SHOT_INTERVAL - FEEDER_HOLD time)
-                // before declaring we're ready for the next shot.
-                if (feederTimer.milliseconds() >= (SHOT_INTERVAL_MS - FEEDER_HOLD_MS)) {
-                    feederState = FeederState.IDLE;
-                    shotCooldown.reset();  // start the inter-shot cooldown timer
-                }
-                break;
-
-            case IDLE:
-                // Nothing to do. Waiting for fireBallNonBlocking() to be called.
-                break;
+        if (feederState == FeederState.PUSHING && feederTimer.milliseconds() >= FEEDER_PUSH_MS) {
+            feeder.setPosition(FEEDER_RETRACTED);
+            feederState = FeederState.RETRACTING;
+            feederTimer.reset();
+        } else if (feederState == FeederState.RETRACTING && feederTimer.milliseconds() >= FEEDER_PUSH_MS) {
+            feederState = FeederState.IDLE;
         }
     }
 
     // ----------------------------------
-    // STOP EVERYTHING
+    // STOP
     // ----------------------------------
 
     public void stop() {
-        spinDown();                     // stop flywheels
-        feeder.setPosition(FEEDER_RETRACT); // retract feeder
-        feederState = FeederState.IDLE;     // reset state
+        setVelocity(0);
+        feeder.setPosition(FEEDER_RETRACTED);
+        feederState = FeederState.IDLE;
     }
 
     // ----------------------------------
-    // STATUS
+    // TELEMETRY
     // ----------------------------------
 
-    // Returns true if flywheels are spinning
-    public boolean isSpinning() {
-        return spinning;
-    }
-
-    // Display telemetry for debugging
-    public void displayTelemetry(Telemetry telemetry) {
-        telemetry.addData("Shooter | tgt",     String.format("%.0f", targetVelocity));  // target velocity
-        telemetry.addData("Shooter | m0 vel",  String.format("%.0f", motor0.getVelocity())); // actual motor0
-        telemetry.addData("Shooter | m1 vel",  String.format("%.0f", motor1.getVelocity())); // actual motor1
-        telemetry.addData("Shooter | ready",   isReadyToFire() ? "YES" : "no");          // ready to fire
-        telemetry.addData("Shooter | feedr",   feederState.name());                        // feeder state machine
+    public void displayTelemetry(Telemetry t) {
+        t.addData("Shooter | target",  String.format("%.0f ticks/s", currentTarget));
+        t.addData("Shooter | m0 vel",  String.format("%.0f", motor0.getVelocity()));
+        t.addData("Shooter | m1 vel",  String.format("%.0f", motor1.getVelocity()));
+        t.addData("Shooter | ready",   isReadyToFire() ? "YES" : "no");
+        t.addData("Shooter | feeder",  feederState.name());
     }
 }

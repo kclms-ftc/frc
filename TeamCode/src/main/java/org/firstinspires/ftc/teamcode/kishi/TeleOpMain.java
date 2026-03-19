@@ -4,103 +4,43 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 /**
- * TeleOp mode for testing drivetrain + shooter
+ * TeleOpMain — Drivetrain + Shooter + Intake
  *
- * Features:
- * - Mecanum drivetrain with deadzone and speed modes
- * - Shooter spin up / spin down
- * - Non-blocking feeder control
- * - Telemetry for debugging
+ * GAMEPAD 1 (driver):
+ *   Left stick Y        → forward / backward
+ *   Left stick X        → strafe left / right
+ *   Right stick X       → rotate
+ *   Left bumper (hold)  → PRECISION speed (30%)
+ *   Right bumper (hold) → TURBO speed (100%)
+ *   Neither bumper      → NORMAL speed (65%)
+ *   Right trigger >50%  → spin up flywheels
+ *   A button            → fire one ball (non-blocking)
+ *
+ * GAMEPAD 2 (operator):
+ *   Right bumper (hold) → intake (pull balls in)
+ *   Left bumper (hold)  → eject (clear jam)
+ *   Neither             → intake stopped
  */
 @TeleOp(name = "TeleOp — Drivetrain + Shooter + Intake")
 public class TeleOpMain extends LinearOpMode {
 
-    // ----------------------------------
-    // MEMBER VARIABLES
-    // ----------------------------------
-    private Robot robot;  // Our central Robot class (contains drivetrain + shooter + vision + etc.)
-
-    // Deadzone for joysticks to prevent drift
     private static final double JOYSTICK_DEADZONE = 0.05;
 
-    // ----------------------------------
-    // UTILITY METHOD
-    // ----------------------------------
-    /**
-     * Applies a deadzone to joystick input
-     * If absolute value is below deadzone, return 0
-     * Otherwise, return the original value
-     */
-    private double applyDeadzone(double value) {
-        return Math.abs(value) > JOYSTICK_DEADZONE ? value : 0;
-    }
+    private Robot robot;
 
-    // ----------------------------------
-    // MAIN LOOP
-    // ----------------------------------
     @Override
-    public void runOpMode() throws InterruptedException {
+    public void runOpMode() {
 
-        // Initialize robot and all subsystems (drivetrain, shooter, intake, etc.)
+        // Initialize all subsystems
         robot = new Robot(hardwareMap);
 
-        // Wait for driver to press play
-        telemetry.addLine("Ready to start!");
+        telemetry.addLine("Ready — press PLAY to start");
         telemetry.update();
         waitForStart();
 
-        // ----------------------------------
-        // LOOP: Runs repeatedly until opMode ends
-        // ----------------------------------
         while (opModeIsActive()) {
 
-            // ----------------------
-            // 1. DRIVE CONTROL
-            // ----------------------
-            // Read joystick values
-            // Left stick: forward/back (y) and left/right strafe (x)
-            // Right stick: rotation (x)
-            double drive  = -applyDeadzone(gamepad1.left_stick_y); // forward/back
-            double strafe = applyDeadzone(gamepad1.left_stick_x);  // left/right
-            double rotate = applyDeadzone(gamepad1.right_stick_x); // rotation
-
-            // Pass processed values to drivetrain
-            robot.drivetrain.drive(drive, strafe, rotate);
-
-            // ----------------------
-            // 2. DRIVE SPEED MODE
-            // ----------------------
-            // Change drivetrain speed mode using gamepad buttons
-            if (gamepad1.left_bumper) robot.drivetrain.setSpeedMode(Drivetrain.SpeedMode.PRECISION);
-            else if (gamepad1.right_bumper) robot.drivetrain.setSpeedMode(Drivetrain.SpeedMode.TURBO);
-            else robot.drivetrain.setSpeedMode(Drivetrain.SpeedMode.NORMAL);
-
-            // ----------------------
-            // 3. SHOOTER CONTROL
-            // ----------------------
-            // Right trigger spins up shooter
-            if (gamepad1.right_trigger > 0.5) {
-                robot.shooter.spinUp();  // default high goal velocity
-            } else {
-                robot.shooter.spinDown(); // stop shooter
-            }
-
-            // ----------------------
-            // 4. FEEDER CONTROL
-            // ----------------------
-            // Press 'A' to fire a ball (non-blocking)
-            if (gamepad1.a) {
-                robot.shooter.fireBallNonBlocking();
-            }
-
-            // Progress feeder state machine (must call every loop)
-            robot.shooter.updateFeeder();
-
-            // ----------------------
-            // 5. INTAKE CONTROL
-            // ----------------------
-            // Gamepad 2 controls intake so driving isn't disrupted
-            // Right bumper = pull balls in, Left bumper = eject, nothing = stop
+            // ---- 1. INTAKE (Gamepad 2) ----
             if (gamepad2.right_bumper) {
                 robot.intake.intake();
             } else if (gamepad2.left_bumper) {
@@ -109,22 +49,46 @@ public class TeleOpMain extends LinearOpMode {
                 robot.intake.stop();
             }
 
-            // ----------------------
-            // 6. TELEMETRY
-            // ----------------------
-            double[] powers = robot.drivetrain.getWheelPowers();
-            telemetry.addData("Wheel Powers", "NE: %.2f, SE: %.2f, SW: %.2f, NW: %.2f",
-                    powers[0], powers[1], powers[2], powers[3]);
-            telemetry.addData("Drive Mode", robot.drivetrain.getSpeedMode().name());
-            robot.shooter.displayTelemetry(telemetry);
-            robot.intake.displayTelemetry(telemetry);
-            telemetry.update();
+            // ---- 2. DRIVE (Gamepad 1) ----
+            double drive  = -applyDeadzone(gamepad1.left_stick_y);  // invert Y so forward = positive
+            double strafe =  applyDeadzone(gamepad1.left_stick_x);
+            double rotate =  applyDeadzone(gamepad1.right_stick_x);
+
+            robot.drivetrain.drive(drive, strafe, rotate);
+
+            // Speed mode
+            if (gamepad1.left_bumper) {
+                robot.drivetrain.setSpeedMode(Drivetrain.SpeedMode.PRECISION);
+            } else if (gamepad1.right_bumper) {
+                robot.drivetrain.setSpeedMode(Drivetrain.SpeedMode.TURBO);
+            } else {
+                robot.drivetrain.setSpeedMode(Drivetrain.SpeedMode.NORMAL);
+            }
+
+            // ---- 3. SHOOTER (Gamepad 1) ----
+            if (gamepad1.right_trigger > 0.5) {
+                robot.shooter.spinUp();
+            } else {
+                robot.shooter.spinDown();
+            }
+
+            // Fire button — non-blocking, safe to hold
+            if (gamepad1.a) {
+                robot.shooter.fireBallNonBlocking();
+            }
+
+            // Must be called every loop to advance feeder state machine
+            robot.shooter.updateFeeder();
+
+            // ---- 4. TELEMETRY ----
+            robot.displayTelemetry(telemetry);
         }
 
-        // ----------------------------------
-        // 6. STOP ALL
-        // ----------------------------------
-        // Emergency stop all subsystems when teleop ends
+        // Clean stop when OpMode ends
         robot.stopAll();
+    }
+
+    private double applyDeadzone(double v) {
+        return Math.abs(v) > JOYSTICK_DEADZONE ? v : 0;
     }
 }
