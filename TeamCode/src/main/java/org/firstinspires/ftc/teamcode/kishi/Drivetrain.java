@@ -3,13 +3,29 @@ package org.firstinspires.ftc.teamcode.kishi;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
-// mecanum drivetrain - 4 wheels in X config
-//   NW(3) ---- NE(0)
-//     |  ROBOT   |
-//   SW(2) ---- SE(1)
-//
-// This layout matters because each wheel contributes differently
-// to forward motion, strafing, and rotation.
+/**
+ * Drivetrain.java — Mecanum Wheel Drivetrain
+ *
+ * HOW IT WORKS:
+ * -------------
+ * This robot uses MECANUM wheels, which have angled rollers on them.
+ * Each wheel is oriented so that combining their forces lets the robot
+ * move in any direction — forward, sideways (strafe), and rotate — all
+ * at the same time without turning the wheels themselves.
+ *
+ * WHEEL LAYOUT (top-down view):
+ *
+ *   NW(3) ---- NE(0)
+ *     |  ROBOT  |
+ *   SW(2) ---- SE(1)
+ *
+ * HARDWARE INDEPENDENCE:
+ * ----------------------
+ * This class does NOT access HardwareMap (the raw Android hardware lookup)
+ * directly. All motor references are passed in via HardwareMapConfig,
+ * which is built once in Robot.java and shared across all subsystems.
+ * This means if motor names change, you only update HardwareMapConfig.java.
+ */
 
 public class Drivetrain {
 
@@ -27,36 +43,46 @@ public class Drivetrain {
     private static final double PRECISION_SPEED = 0.3;
     private static final double TURBO_SPEED     = 1.0;
 
-    // Reference to the shared hardware config
-    // This gives access to all motors without calling hardwareMap again
+    // Shared hardware config — all motor access goes through this object.
+    // We NEVER call hardwareMap.get() inside this class. Hardware is wired
+    // up once in HardwareMapConfig and passed here via the constructor.
     private final HardwareMapConfig robot;
 
-    // Current speed mode
+    // Current speed mode (NORMAL, PRECISION, TURBO)
     private SpeedMode speedMode;
 
-    // Current multiplier applied to motor power
+    // The multiplier that scales raw mecanum power output (0.0 to 1.0)
     private double speedMultiplier;
 
+    /**
+     * Constructor — receives pre-built hardware config.
+     * Does NOT take a raw HardwareMap. Hardware is already resolved.
+     *
+     * @param robot Shared HardwareMapConfig with all motors wired up
+     */
     public Drivetrain(HardwareMapConfig robot) {
         this.robot = robot;
 
         // MOTOR DIRECTIONS
         // ----------------
-        // Motors on opposite sides of the robot are mirrored,
-        // so we reverse one side so that "forward power"
-        // actually makes all wheels spin forward physically.
+        // The right-side motors (wheel_0, wheel_1) and left-side motors
+        // (wheel_2, wheel_3) are physically mirrored. If we set the same
+        // direction for all 4, the left side would spin backward relative
+        // to the right side and the robot would spin in place.
         //
-        // If this is wrong, robot will spin instead of moving straight.
+        // Fix: reverse the left-side so "forward power" = actual forward motion.
+        // If the robot spins instead of driving straight, check this section first.
 
-        robot.wheel_0.setDirection(DcMotorSimple.Direction.FORWARD);  // NE
-        robot.wheel_1.setDirection(DcMotorSimple.Direction.FORWARD);  // SE
-        robot.wheel_2.setDirection(DcMotorSimple.Direction.REVERSE);  // SW
-        robot.wheel_3.setDirection(DcMotorSimple.Direction.REVERSE);  // NW
+        robot.wheel_0.setDirection(DcMotorSimple.Direction.FORWARD);  // NE (front-right)
+        robot.wheel_1.setDirection(DcMotorSimple.Direction.FORWARD);  // SE (back-right)
+        robot.wheel_2.setDirection(DcMotorSimple.Direction.REVERSE);  // SW (back-left)
+        robot.wheel_3.setDirection(DcMotorSimple.Direction.REVERSE);  // NW (front-left)
 
         // ZERO POWER BEHAVIOR
         // -------------------
-        // BRAKE = motors resist movement when power = 0
-        // This prevents drifting when you stop input
+        // BRAKE makes the motor actively resist movement when power = 0.
+        // This stops the robot quickly instead of coasting to a halt.
+        // Good for precision driving and stopping on a dime.
 
         robot.wheel_0.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         robot.wheel_1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -65,79 +91,91 @@ public class Drivetrain {
 
         // MOTOR MODE
         // ----------
-        // RUN_WITHOUT_ENCODER means:
-        // - we directly control power
-        // - no speed/position regulation
-        // This is standard for TeleOp driving
+        // RUN_WITHOUT_ENCODER = raw power control, no PID, no speed regulation.
+        // We just say "spin at 80% power" and the motor does it.
+        // Drivetrain doesn't need velocity control — the driver corrects naturally.
+        // (Compare this to the Shooter, which uses RUN_USING_ENCODER + PIDF
+        //  because consistent flywheel speed is critical for accuracy.)
 
         robot.wheel_0.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         robot.wheel_1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         robot.wheel_2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         robot.wheel_3.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        // DEFAULT SPEED SETTINGS
+        // Start in NORMAL mode by default
         this.speedMode = SpeedMode.NORMAL;
         this.speedMultiplier = NORMAL_SPEED;
     }
 
-    // MAIN DRIVE METHOD
-    // -----------------
-    // This is called EVERY LOOP (like 50+ times per second)
-    //
-    // Parameters:
-    // drive   → forward/backward movement
-    // strafe  → left/right movement
-    // rotate  → turning (spinning)
-    //
-    // These come directly from joystick inputs
-
+    /**
+     * drive() — Main mecanum drive method. Call this every loop.
+     *
+     * HOW MECANUM MATH WORKS:
+     * -----------------------
+     * Mecanum wheels have rollers at 45°. Each wheel's roller direction
+     * determines how it contributes to movement. The math below combines
+     * three independent motions into one set of motor powers:
+     *
+     *   drive  (Y axis) → forward / backward
+     *   strafe (X axis) → slide left / right without rotating
+     *   rotate (X axis, right stick) → spin the robot in place
+     *
+     * For a standard mecanum layout, the wheel power equations are:
+     *
+     *   NE (wheel_0) = drive - strafe - rotate
+     *   SE (wheel_1) = drive + strafe - rotate
+     *   SW (wheel_2) = drive - strafe + rotate
+     *   NW (wheel_3) = drive + strafe + rotate
+     *
+     * The +/- signs come from the roller geometry:
+     * - Strafing right: NE and SW get negative strafe, NE and NW get positive
+     * - Rotating: right-side wheels get negative rotate, left-side get positive
+     *
+     * @param drive  Forward/backward input, range [-1, 1]. Positive = forward.
+     * @param strafe Left/right input, range [-1, 1]. Positive = strafe right.
+     * @param rotate Rotation input, range [-1, 1]. Positive = turn right.
+     */
     public void drive(double drive, double strafe, double rotate) {
-        // deadzone to prevent drifting
+
+        // Apply deadzone to all three axes.
+        // Joysticks rarely read exactly 0.0 at rest — this prevents the robot
+        // from creeping forward when no input is given.
         drive  = deadzone(drive);
         strafe = deadzone(strafe);
         rotate = deadzone(rotate);
 
-        // MECANUM MATH
-        // ------------
-        // Each wheel contributes differently to movement.
-        // We combine 3 motions:
-        // - forward/backward (drive)
-        // - sideways (strafe)
-        // - rotation (rotate)
-        //
-        // Each wheel gets a different combination of + and - values
+        // MECANUM WHEEL POWER EQUATIONS
+        // Each wheel needs a unique combination of the three inputs.
+        // The signs reflect how each wheel's rollers push the robot.
+        double w0 = drive - strafe - rotate;   // NE (front-right)
+        double w1 = drive + strafe - rotate;   // SE (back-right)
+        double w2 = drive - strafe + rotate;   // SW (back-left)
+        double w3 = drive + strafe + rotate;   // NW (front-left)
 
-        double w0 = drive - strafe - rotate;   // NE (front right)
-        double w1 = drive + strafe - rotate;   // SE (back right)
-        double w2 = drive - strafe + rotate;   // SW (back left)
-        double w3 = drive + strafe + rotate;   // NW (front left)
-
-        // NORMALIZATION
-        // -------------
-        // Problem:
-        // If we add values like 1 + 1 + 1 = 3,
-        // motor power exceeds allowed range [-1, 1]
+        // POWER NORMALIZATION
+        // -------------------
+        // When all three inputs are maxed out, their sum can exceed 1.0,
+        // which is outside the valid motor power range. If we just clip at 1.0,
+        // we'd lose the relative balance between wheels and the robot would
+        // behave unexpectedly. Instead, we scale ALL wheels down proportionally
+        // so the ratios stay correct.
         //
-        // Solution:
-        // Find the largest magnitude and scale everything down
+        // Example: if w3 = 3.0 and everything else is smaller,
+        //          we divide all by 3.0 → w3 becomes 1.0, others scale down.
 
         double max = Math.max(
                 Math.max(Math.abs(w0), Math.abs(w1)),
                 Math.max(Math.abs(w2), Math.abs(w3)));
 
-        // Only scale if needed
-        if (max > 1.0) {
+        if (max > 1.0) {   // only normalize if we're actually over the limit
             w0 /= max;
             w1 /= max;
             w2 /= max;
             w3 /= max;
         }
 
-        // APPLY POWER
-        // -----------
-        // Multiply by speedMultiplier to adjust overall speed
-        // Then send final values to motors
-
+        // APPLY POWER to hardware via HardwareMapConfig
+        // speedMultiplier scales the final output (NORMAL=1.0, PRECISION=0.3, TURBO=1.0)
         robot.wheel_0.setPower(w0 * speedMultiplier);
         robot.wheel_1.setPower(w1 * speedMultiplier);
         robot.wheel_2.setPower(w2 * speedMultiplier);
@@ -204,7 +242,9 @@ public class Drivetrain {
         };
     }
 
-    //deadzone return 0 if less than 0.05
+    // Deadzone helper — returns 0 if the joystick value is too small to care about.
+    // Without this, analog sticks that don't perfectly center at 0.0 would cause
+    // the robot to slowly drift even when the driver isn't touching anything.
     private double deadzone(double value) {
         return Math.abs(value) > 0.05 ? value : 0;
     }

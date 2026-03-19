@@ -3,14 +3,15 @@ package org.firstinspires.ftc.teamcode.kishi;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 /**
- * Robot.java — simplified version
+ * Robot.java — Central subsystem container
  *
- * Central container for only the Drivetrain and Shooter subsystems.
+ * Robot is the single object that OpModes interact with.
+ * It owns every subsystem (Drivetrain, Shooter, Odometry) and
+ * wires them all to the same HardwareMapConfig so hardware
+ * lookup only ever happens in one place.
  *
- * Purpose:
- * - Keeps code clean by having one object that contains all hardware functionality
- * - OpModes interact ONLY with Robot, never directly with motors
- * - Provides stopAll() for emergency stop or end-of-OpMode
+ * OpModes never touch HardwareMapConfig directly —
+ * they just call robot.drivetrain, robot.shooter, robot.odometry.
  */
 public class Robot {
 
@@ -18,25 +19,29 @@ public class Robot {
     // SUBSYSTEMS
     // ----------------------------------
 
-    public final Drivetrain drivetrain;  // Handles mecanum wheel movement
-    public final Shooter shooter;         // Handles flywheel shooter + feeder
+    public final Drivetrain drivetrain;  // Mecanum wheel movement
+    public final Shooter    shooter;     // Flywheel shooter + feeder
+    public final Odometry   odometry;    // Pinpoint position + heading tracking
 
     // ----------------------------------
     // CONSTRUCTOR
     // ----------------------------------
 
     /**
-     * Main constructor
-     * @param hw HardwareMap from OpMode
-     * @param enableLiveView Optional for future, not used here
+     * Main constructor — call this from your OpMode's runOpMode().
+     *
+     * Creates one HardwareMapConfig, then passes it to every subsystem.
+     * Hardware is looked up exactly once; subsystems share references.
+     *
+     * @param hw             HardwareMap provided by the OpMode framework
+     * @param enableLiveView Reserved for future camera live-view toggle
      */
     public Robot(HardwareMap hw, boolean enableLiveView) {
-        // Create a hardware map object with all robot motors/servos
         HardwareMapConfig config = new HardwareMapConfig(hw);
 
-        // Instantiate only the subsystems we need
-        drivetrain = new Drivetrain(config); // 4 wheels mecanum drivetrain
-        shooter    = new Shooter(config);    // Flywheel + feeder
+        drivetrain = new Drivetrain(config);  // 4-wheel mecanum
+        shooter    = new Shooter(config);     // Flywheel + feeder servo
+        odometry   = new Odometry(config);    // Pinpoint dead-wheel localization
     }
 
     /**
@@ -54,29 +59,35 @@ public class Robot {
     /**
      * stopAll()
      * Stops all active subsystems immediately.
-     * Useful for:
-     * - End of teleop
-     * - Emergency stop
+     * Note: Odometry has no stop — it's always passive (read-only hardware).
      */
     public void stopAll() {
-        drivetrain.stop();  // Stop all 4 wheels
-        shooter.stop();     // Stop flywheels and reset feeder
+        drivetrain.stop();  // cut wheel power
+        shooter.stop();     // stop flywheels, retract feeder
+        // odometry continues tracking even after stop — this is intentional
     }
 
     /**
      * displayTelemetry()
-     * Optional helper to display drivetrain + shooter info in one place.
-     * @param telemetry Telemetry object from OpMode
+     * Dumps all subsystem data to the Driver Station in one call.
+     *
+     * IMPORTANT: call odometry.update() BEFORE this each loop,
+     * otherwise position data shown here will be one loop stale.
+     *
+     * @param telemetry Telemetry object from the OpMode
      */
     public void displayTelemetry(org.firstinspires.ftc.robotcore.external.Telemetry telemetry) {
-        // Drivetrain telemetry
+        // Drivetrain
         double[] powers = drivetrain.getWheelPowers();
-        telemetry.addData("Wheel Powers NE/SE/SW/NW", "%.2f %.2f %.2f %.2f",
+        telemetry.addData("Wheels NE/SE/SW/NW", "%.2f %.2f %.2f %.2f",
                 powers[0], powers[1], powers[2], powers[3]);
         telemetry.addData("Drive Mode", drivetrain.getSpeedMode().name());
 
-        // Shooter telemetry
+        // Shooter
         shooter.displayTelemetry(telemetry);
+
+        // Odometry
+        odometry.displayTelemetry(telemetry);
 
         telemetry.update();
     }
