@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.kishi;
+package org.firstinspires.ftc.teamcode.rn_code;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
