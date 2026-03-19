@@ -12,7 +12,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
  * - Non-blocking feeder control
  * - Telemetry for debugging
  */
-@TeleOp(name = "TeleOp Drivetrain + Shooter")
+@TeleOp(name = "TeleOp — Drivetrain + Shooter + Intake")
 public class TeleOpMain extends LinearOpMode {
 
     // ----------------------------------
@@ -97,18 +97,27 @@ public class TeleOpMain extends LinearOpMode {
             robot.shooter.updateFeeder();
 
             // ----------------------
-            // 5. TELEMETRY
+            // 5. INTAKE CONTROL
             // ----------------------
-            // Show drivetrain info
+            // Gamepad 2 controls intake so driving isn't disrupted
+            // Right bumper = pull balls in, Left bumper = eject, nothing = stop
+            if (gamepad2.right_bumper) {
+                robot.intake.intake();
+            } else if (gamepad2.left_bumper) {
+                robot.intake.eject();
+            } else {
+                robot.intake.stop();
+            }
+
+            // ----------------------
+            // 6. TELEMETRY
+            // ----------------------
             double[] powers = robot.drivetrain.getWheelPowers();
             telemetry.addData("Wheel Powers", "NE: %.2f, SE: %.2f, SW: %.2f, NW: %.2f",
                     powers[0], powers[1], powers[2], powers[3]);
-
             telemetry.addData("Drive Mode", robot.drivetrain.getSpeedMode().name());
-
-            // Show shooter info
             robot.shooter.displayTelemetry(telemetry);
-
+            robot.intake.displayTelemetry(telemetry);
             telemetry.update();
         }
 

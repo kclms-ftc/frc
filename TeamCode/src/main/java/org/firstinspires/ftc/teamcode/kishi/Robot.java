@@ -5,13 +5,10 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 /**
  * Robot.java — Central subsystem container
  *
- * Robot is the single object that OpModes interact with.
- * It owns every subsystem (Drivetrain, Shooter, Odometry) and
- * wires them all to the same HardwareMapConfig so hardware
- * lookup only ever happens in one place.
+ * Active subsystems: Drivetrain, Shooter, Intake
+ * Commented out: Odometry (re-enable when position tracking is needed)
  *
- * OpModes never touch HardwareMapConfig directly —
- * they just call robot.drivetrain, robot.shooter, robot.odometry.
+ * OpModes use: robot.drivetrain, robot.shooter, robot.intake
  */
 public class Robot {
 
@@ -21,7 +18,8 @@ public class Robot {
 
     public final Drivetrain drivetrain;  // Mecanum wheel movement
     public final Shooter    shooter;     // Flywheel shooter + feeder
-    public final Odometry   odometry;    // Pinpoint position + heading tracking
+    public final Intake     intake;      // Ball intake roller
+    // public final Odometry odometry;  // Pinpoint localization — commented out, not needed right now
 
     // ----------------------------------
     // CONSTRUCTOR
@@ -41,7 +39,8 @@ public class Robot {
 
         drivetrain = new Drivetrain(config);  // 4-wheel mecanum
         shooter    = new Shooter(config);     // Flywheel + feeder servo
-        odometry   = new Odometry(config);    // Pinpoint dead-wheel localization
+        intake     = new Intake(config);      // Intake roller
+        // odometry = new Odometry(config);  // uncomment to enable Pinpoint localization
     }
 
     /**
@@ -57,24 +56,17 @@ public class Robot {
     // ----------------------------------
 
     /**
-     * stopAll()
-     * Stops all active subsystems immediately.
-     * Note: Odometry has no stop — it's always passive (read-only hardware).
+     * stopAll() — cuts power to all active subsystems.
+     * Call at end of OpMode or on emergency stop.
      */
     public void stopAll() {
         drivetrain.stop();  // cut wheel power
         shooter.stop();     // stop flywheels, retract feeder
-        // odometry continues tracking even after stop — this is intentional
+        intake.stop();      // stop intake roller
     }
 
     /**
-     * displayTelemetry()
-     * Dumps all subsystem data to the Driver Station in one call.
-     *
-     * IMPORTANT: call odometry.update() BEFORE this each loop,
-     * otherwise position data shown here will be one loop stale.
-     *
-     * @param telemetry Telemetry object from the OpMode
+     * displayTelemetry() — shows drivetrain, shooter, and intake data on Driver Station.
      */
     public void displayTelemetry(org.firstinspires.ftc.robotcore.external.Telemetry telemetry) {
         // Drivetrain
@@ -86,8 +78,11 @@ public class Robot {
         // Shooter
         shooter.displayTelemetry(telemetry);
 
-        // Odometry
-        odometry.displayTelemetry(telemetry);
+        // Intake
+        intake.displayTelemetry(telemetry);
+
+        // Odometry (uncomment if re-enabled)
+        // odometry.displayTelemetry(telemetry);
 
         telemetry.update();
     }
