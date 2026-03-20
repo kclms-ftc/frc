@@ -52,7 +52,8 @@ public class HardwareMapConfig {
         // Offsets are mm from the robot's tracking center (usually robot center)
         // Positive X = right of center, Positive Y = forward of center
         pinpoint = hw.get(GoBildaPinpointDriver.class, "pinpoint");
-        pinpoint.setOffsets(-84.0, -168.0);   // tune these to your actual pod mounting positions
+        pinpoint.setOffsets(-45, -126);   // tune these to your actual pod mounting positions
+        pinpoint.setTrackWidth(90); // distance between the dead wheels (to calibrate rotation
         pinpoint.setEncoderResolution(
             GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD  // 2000 CPR, 32mm wheel
         );
