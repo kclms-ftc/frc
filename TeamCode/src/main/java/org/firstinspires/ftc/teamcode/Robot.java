@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 
 /**
  * Robot — central container for all subsystems.
@@ -21,6 +22,7 @@ public class Robot {
     public final Shooter    shooter;
     public final Intake     intake;
     public final Turret     turret;
+    public final Vision     vision;
 
     public Robot(HardwareMap hw) {
         HardwareMapConfig config = new HardwareMapConfig(hw);
@@ -29,6 +31,7 @@ public class Robot {
         shooter    = new Shooter(config);
         intake     = new Intake(config);
         turret     = new Turret(config);
+        vision     = new Vision(config);
     }
 
     /** Cut power to all active subsystems. Call at end of OpMode. */
@@ -37,6 +40,7 @@ public class Robot {
         shooter.stop();
         intake.stop();
         turret.stop();
+        vision.stop();
     }
 
     /** Push all subsystem data to Driver Station in one call. */
@@ -45,6 +49,7 @@ public class Robot {
         shooter.displayTelemetry(t);
         intake.displayTelemetry(t);
         turret.displayTelemetry(t);
+        vision.displayTelemetry(t);
         t.update();
     }
 }

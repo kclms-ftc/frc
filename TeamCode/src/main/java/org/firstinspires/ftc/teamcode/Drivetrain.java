@@ -1,7 +1,9 @@
-package org.firstinspires.ftc.teamcode.rn_code;
+package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+
+import org.firstinspires.ftc.teamcode.HardwareMapConfig;
 
 /**
  * Drivetrain.java — Mecanum Wheel Drivetrain

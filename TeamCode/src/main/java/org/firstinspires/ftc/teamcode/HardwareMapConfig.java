@@ -4,6 +4,8 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+
 /**
  * HardwareMapConfig — the only place hw.get() is ever called.
  *
@@ -30,6 +32,9 @@ public class HardwareMapConfig {
     // --- Turret --- (rotation motor)
     public DcMotorEx turret_motor;
 
+    // --- Webcam ---
+    public WebcamName webcam;
+
     public HardwareMapConfig(HardwareMap hw) {
 
         // Drivetrain
@@ -48,5 +53,8 @@ public class HardwareMapConfig {
 
         // Turret
         turret_motor = hw.get(DcMotorEx.class, "turret_motor");
+
+        //Webcam
+        webcam = hw.get(WebcamName.class, "webcam");
     }
 }

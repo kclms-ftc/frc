@@ -86,7 +86,7 @@ public class TeleOpMain extends LinearOpMode {
             double strafe =  applyDeadzone(gamepad1.left_stick_x);
             double rotate =  applyDeadzone(gamepad1.right_stick_x);
 
-            robot.drivetrain.drive(drive, strafe, rotate);
+
 
             // Speed mode (Gamepad 1 D-Pad)
             if (gamepad1.dpad_down) {
@@ -96,6 +96,7 @@ public class TeleOpMain extends LinearOpMode {
             } else {
                 robot.drivetrain.setSpeedMode(Drivetrain.SpeedMode.NORMAL);
             }
+            robot.drivetrain.drive(drive, strafe, rotate);
 
             // ---- 3. SHOOTER (Gamepad 1) ----
             if (gamepad1.right_trigger > 0.5) {
