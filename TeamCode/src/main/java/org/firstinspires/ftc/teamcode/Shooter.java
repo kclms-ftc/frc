@@ -6,11 +6,17 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
+/*
+GAMEPAD:
+x button - triggers shooting sequence
+*/
+
 public class Shooter {
 
     private DcMotorEx shooterMotor0, shooterMotor1;
     private Servo feederServo, stopperServo;
 
+    public boolean shootingCurrently = false;
     // MAIN METHODS
 
     // constructor method
@@ -21,7 +27,9 @@ public class Shooter {
         stopperServo = hw.stopper_servo;
     }
     public void loop(Gamepad gp) {
-
+        if(gp.x) {
+            if(!shootingCurrently) startShootingSequence();
+        }
     }
 
     public void updateTelemetry(Telemetry t) {
@@ -36,4 +44,8 @@ public class Shooter {
     }
 
     // HELPER METHODS
+
+    public void startShootingSequence() {
+        // use shooter gamma to make this and more helper functions probably
+    }
 }
