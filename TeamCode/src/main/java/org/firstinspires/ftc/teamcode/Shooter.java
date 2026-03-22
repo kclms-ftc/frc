@@ -11,6 +11,8 @@ public class Shooter {
     private DcMotorEx shooterMotor0, shooterMotor1;
     private Servo feederServo, stopperServo;
 
+    // MAIN METHODS
+
     // constructor method
     public Shooter(HardwareMapConfig hw) {
         shooterMotor0 = hw.shooter_motor_0;
@@ -32,4 +34,6 @@ public class Shooter {
         feederServo.setPosition(0);  // safe position
         stopperServo.setPosition(0); // safe position
     }
+
+    // HELPER METHODS
 }

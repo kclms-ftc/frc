@@ -8,6 +8,8 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 public class Turret {
     private DcMotorEx turretMotor;
 
+    // MAIN METHODS
+
     // constructor method
     public Turret(HardwareMapConfig hw) {
         turretMotor = hw.turret_motor;
@@ -23,4 +25,6 @@ public class Turret {
     public void stop() {
         turretMotor.setPower(0);
     }
+
+    // HELPER METHODS
 }

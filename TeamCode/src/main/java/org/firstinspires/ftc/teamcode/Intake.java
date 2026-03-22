@@ -9,6 +9,8 @@ public class Intake {
 
     private DcMotorEx intakeMotor;
 
+    // MAIN METHODS
+
     // constructor method
     public Intake(HardwareMapConfig hw) {
         intakeMotor = hw.intake_motor;
@@ -24,4 +26,6 @@ public class Intake {
     public void stop() {
         intakeMotor.setPower(0);
     }
+
+    // HELPER METHODS
 }
