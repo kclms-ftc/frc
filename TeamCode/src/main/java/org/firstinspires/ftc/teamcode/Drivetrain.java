@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.HardwareMapConfig;
 
 /**
@@ -249,5 +250,9 @@ public class Drivetrain {
     // the robot to slowly drift even when the driver isn't touching anything.
     private double deadzone(double value) {
         return Math.abs(value) > 0.05 ? value : 0;
+    }
+
+    public void displayTelemetry(Telemetry t){
+        //add stuff in here if we need to perform checks
     }
 }

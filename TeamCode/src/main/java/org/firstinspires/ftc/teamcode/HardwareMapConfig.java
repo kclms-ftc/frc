@@ -1,10 +1,12 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 /**
  * HardwareMapConfig — the only place hw.get() is ever called.
@@ -35,6 +37,10 @@ public class HardwareMapConfig {
     // --- Webcam ---
     public WebcamName webcam;
 
+    // --- Odometry ---
+    public GoBildaPinpointDriver pinpoint;
+
+
     public HardwareMapConfig(HardwareMap hw) {
 
         // Drivetrain
@@ -56,5 +62,18 @@ public class HardwareMapConfig {
 
         //Webcam
         webcam = hw.get(WebcamName.class, "webcam");
+
+        //Pinpoint
+        pinpoint = hw.get(GoBildaPinpointDriver.class, "pinpoint");
+
+        /* PINPOINT CONFIGURATION
+        These must be set here so the odometry subsystem file starts with a calibrated unit.
+         */
+        pinpoint.setOffsets(-45, -126, DistanceUnit.MM);   // tune these to your actual pod mounting positions
+        //pinpoint.setTrack(90); // distance between the dead wheels (to calibrate rotation
+        pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);  // 2000 CPR, 32mm wheel
+        pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD,
+                GoBildaPinpointDriver.EncoderDirection.FORWARD);
+        pinpoint.resetPosAndIMU();
     }
 }

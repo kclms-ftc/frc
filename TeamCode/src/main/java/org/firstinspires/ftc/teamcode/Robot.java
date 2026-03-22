@@ -23,6 +23,7 @@ public class Robot {
     public final Intake     intake;
     public final Turret     turret;
     public final Vision     vision;
+    public final Odometry   odometry;
 
     public Robot(HardwareMap hw) {
         HardwareMapConfig config = new HardwareMapConfig(hw);
@@ -32,6 +33,7 @@ public class Robot {
         intake     = new Intake(config);
         turret     = new Turret(config);
         vision     = new Vision(config);
+        odometry   = new Odometry(config);
     }
 
     /** Cut power to all active subsystems. Call at end of OpMode. */
@@ -41,6 +43,7 @@ public class Robot {
         intake.stop();
         turret.stop();
         vision.stop();
+        odometry.stop(); //fix ts
     }
 
     /** Push all subsystem data to Driver Station in one call. */
@@ -50,6 +53,7 @@ public class Robot {
         intake.displayTelemetry(t);
         turret.displayTelemetry(t);
         vision.displayTelemetry(t);
+        odometry.displayTelemetry(t);
         t.update();
     }
 }
