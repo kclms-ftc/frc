@@ -1,9 +1,8 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.gamma;
 
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 
 /**
  * Robot — central container for all subsystems.
@@ -16,24 +15,24 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
  * Hardware is looked up once (in HardwareMapConfig) and
  * shared to every subsystem — nothing else calls hw.get().
  */
-public class Robot {
+public class gammaRobot {
 
-    public final Drivetrain drivetrain;
-    public final Shooter    shooter;
-    public final Intake     intake;
-    public final Turret     turret;
-    public final Vision     vision;
-    public final Odometry   odometry;
+    public final gammaDrivetrain drivetrain;
+    public final gammaShooter shooter;
+    public final gammaIntake intake;
+    public final gammaTurret turret;
+    public final gammaVision vision;
+    public final gammaOdometry odometry;
 
-    public Robot(HardwareMap hw) {
-        HardwareMapConfig config = new HardwareMapConfig(hw);
+    public gammaRobot(HardwareMap hw) {
+        gammaHardwareMapConfig config = new gammaHardwareMapConfig(hw);
 
-        drivetrain = new Drivetrain(config);
-        shooter    = new Shooter(config);
-        intake     = new Intake(config);
-        turret     = new Turret(config);
-        vision     = new Vision(config);
-        odometry   = new Odometry(config);
+        drivetrain = new gammaDrivetrain(config);
+        shooter    = new gammaShooter(config);
+        intake     = new gammaIntake(config);
+        turret     = new gammaTurret(config);
+        vision     = new gammaVision(config);
+        odometry   = new gammaOdometry(config);
     }
 
     /** Cut power to all active subsystems. Call at end of OpMode. */

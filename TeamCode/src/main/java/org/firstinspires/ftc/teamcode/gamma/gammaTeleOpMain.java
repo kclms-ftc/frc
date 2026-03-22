@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.gamma;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -30,11 +30,11 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
  *   Y button            → cycle intake (OFF -> INTAKE -> EJECT)
  */
 @TeleOp(name = "TeleOp — Single Gamepad")
-public class TeleOpMain extends LinearOpMode {
+public class gammaTeleOpMain extends LinearOpMode {
 
     private static final double JOYSTICK_DEADZONE = 0.05;
 
-    private Robot robot;
+    private gammaRobot robot;
 
     // Intake state machine
     private enum IntakeState { OFF, INTAKE, EJECT }
@@ -45,7 +45,7 @@ public class TeleOpMain extends LinearOpMode {
     public void runOpMode() {
 
         // Initialize all subsystems
-        robot = new Robot(hardwareMap);
+        robot = new gammaRobot(hardwareMap);
 
         telemetry.addLine("Ready — press PLAY to start");
         telemetry.update();
@@ -90,11 +90,11 @@ public class TeleOpMain extends LinearOpMode {
 
             // Speed mode (Gamepad 1 D-Pad)
             if (gamepad1.dpad_down) {
-                robot.drivetrain.setSpeedMode(Drivetrain.SpeedMode.PRECISION);
+                robot.drivetrain.setSpeedMode(gammaDrivetrain.SpeedMode.PRECISION);
             } else if (gamepad1.dpad_up) {
-                robot.drivetrain.setSpeedMode(Drivetrain.SpeedMode.TURBO);
+                robot.drivetrain.setSpeedMode(gammaDrivetrain.SpeedMode.TURBO);
             } else {
-                robot.drivetrain.setSpeedMode(Drivetrain.SpeedMode.NORMAL);
+                robot.drivetrain.setSpeedMode(gammaDrivetrain.SpeedMode.NORMAL);
             }
             robot.drivetrain.drive(drive, strafe, rotate);
 

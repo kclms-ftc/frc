@@ -1,6 +1,5 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.gamma;
 
-import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -9,7 +8,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 // import org.firstinspires.ftc.teamcode.GoBildaPinpointDriver;
-import org.firstinspires.ftc.teamcode.HardwareMapConfig;
+
 
 /**
  * Odometry.java — Pinpoint Position Tracking Subsystem
@@ -41,7 +40,7 @@ import org.firstinspires.ftc.teamcode.HardwareMapConfig;
  *   Heading 0° = facing the audience (positive X direction)
  *   Set at match start with reset() or setPosition()
  */
-public class Odometry {
+public class gammaOdometry {
 
     // ----------------------------------
     // MEMBER VARIABLES
@@ -60,7 +59,7 @@ public class Odometry {
     /**
      * @param robot Shared HardwareMapConfig — Pinpoint already initialized inside it
      */
-    public Odometry(HardwareMapConfig robot) {
+    public gammaOdometry(gammaHardwareMapConfig robot) {
         pinpoint = robot.pinpoint;
         // pinpoint.resetPosAndIMU() was already called in HardwareMapConfig
         // so we are zeroed and calibrated by the time this constructor runs

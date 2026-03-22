@@ -1,15 +1,8 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.gamma;
 
 import android.util.Size;
 
-import com.google.gson.annotations.Expose;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.HardwareMap;
-
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.robotcore.external.hardware.camera.Camera;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.FocusControl;
@@ -18,10 +11,9 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 import java.util.List;
-import java.util.Vector;
 import java.util.concurrent.TimeUnit;
 
-public class Vision {
+public class gammaVision {
     private static final int CAMERA_WIDTH = 640;
     private static final int CAMERA_HEIGHT = 480;
     private static final long MANUAL_EXPOSURE_MS = 50;
@@ -47,7 +39,7 @@ public class Vision {
 
     // Extra Variables if necessary
 
-    public Vision(HardwareMapConfig robot) {
+    public gammaVision(gammaHardwareMapConfig robot) {
         webcam = robot.webcam;
         // Initialise April Tag Processor using Builder()
 
