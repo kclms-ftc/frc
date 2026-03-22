@@ -2,7 +2,6 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.Gamepad;
 
 @TeleOp(name = "new teleop")
 public class Teleop extends OpMode {
@@ -46,7 +45,7 @@ public class Teleop extends OpMode {
 
     @Override
     public void stop() {
-        // stop all subsytems immediately
+        // stop all subsystems immediately
         drivetrain.stop();
         intake.stop();
         shooter.stop();
