@@ -265,4 +265,8 @@ public class Odometry {
         telemetry.addData("Ticks X",    getRawTicksX());
         telemetry.addData("Ticks Y",    getRawTicksY());
     }
+
+    public void stop() {
+
+    }
 }
