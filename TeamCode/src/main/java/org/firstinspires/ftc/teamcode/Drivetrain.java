@@ -16,7 +16,11 @@ public class Drivetrain {
 
     // These allow the driver to switch according to precisions and speed
     private enum SpeedMode {NORMAL, PRECISION};
-
+    private boolean lastDpadDown = false;
+    private SpeedMode speedMode = SpeedMode.NORMAL;
+    private double speedMultiplier = 1.0;
+    private double precisionSpeedMultiplier = 0.4;
+    private double normalSpeedMultiplier = 1.0;
     private boolean autoMoveActive;
 
     private double targetX, targetY, targetHeading;
@@ -33,9 +37,7 @@ public class Drivetrain {
     public void loop(Gamepad gp) {
 
         // set speed mode according to driver
-        if (gp.dpad_down) {
-            toggleSpeedMode();
-        }
+        toggleSpeedMode(gp.dpad_down);
 
         // check auto move button
         if (gp.b) {
@@ -74,8 +76,22 @@ public class Drivetrain {
     // HELPER METHODS
 
     // Allows driver to switch between control styles
-    public void toggleSpeedMode() {
-        // create this method
+    public void toggleSpeedMode(boolean currentButtonState) {
+
+        // detect if the button was just pressed
+        if (currentButtonState && !lastDpadDown) {
+            // toggle speedmode between normal and precision
+            if (speedMode == SpeedMode.NORMAL) {
+                speedMode = SpeedMode.PRECISION;
+                speedMultiplier = precisionSpeedMultiplier;
+            } else {
+                speedMode = SpeedMode.PRECISION;
+                speedMultiplier = normalSpeedMultiplier;
+            }
+        }
+
+        // store current dpad state for the next loop
+        lastDpadDown = currentButtonState;
     }
 
     public void goToTargetWithOdometry(double x, double y, double heading) {

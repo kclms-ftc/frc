@@ -14,7 +14,8 @@ public class Intake {
 
     private DcMotorEx intakeMotor;
 
-    public static double intakePower = 0.6; // change to default intake motor speed
+    public static double intakePower = 0.85;
+    public static double outtakePower = -0.6;
     // MAIN METHODS
 
     // constructor method
@@ -26,7 +27,7 @@ public class Intake {
         intakeMotor.setPower(intakePower);
 
         if(gp.dpad_up) {
-            intakeMotor.setPower(-intakePower);
+            intakeMotor.setPower(outtakePower);
         }
     }
 

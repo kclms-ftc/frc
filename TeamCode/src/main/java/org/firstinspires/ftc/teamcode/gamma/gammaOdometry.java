@@ -106,9 +106,7 @@ public class gammaOdometry {
     }
 
     /** Heading in degrees. 0 = facing audience. Positive = counter-clockwise (FTC standard). */
-    public double getHeadingDegrees() {
-        return pinpoint.getPosition().getHeading(AngleUnit.DEGREES);
-    }
+    public double getHeadingDegrees() {return pinpoint.getPosition().getHeading(AngleUnit.DEGREES);}
 
     /** Heading in radians — use this for math (trig functions expect radians). */
     public double getHeadingRadians() {
