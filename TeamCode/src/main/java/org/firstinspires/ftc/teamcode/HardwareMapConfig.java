@@ -53,12 +53,92 @@ public class HardwareMapConfig {
         // Offsets are mm from the robot's tracking center (usually robot center)
         // Positive X = right of center, Positive Y = forward of center
         pinpoint = hw.get(GoBildaPinpointDriver.class, "pinpoint");
-        pinpoint.setOffsets(-45, -126); // tune to your actual pod positions (see adjustments.md)
+        pinpoint.setOffsets(-126, -45); // tune to your actual pod positions (see adjustments.md)
         pinpoint.setEncoderResolution(
             GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD  // 2000 CPR, 32mm wheel
         );
         pinpoint.setEncoderDirections(
-            GoBildaPinpointDriver.EncoderDirection.FORWARD,  // pod_x direction
+            GoBildaPinpointDriver.EncoderDirection.FORWARD,  // pod_x direction       -
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             GoBildaPinpointDriver.EncoderDirection.FORWARD   // pod_y direction — flip to REVERSED if Y reads backwards
         );
         pinpoint.resetPosAndIMU();  // zero field position and calibrate IMU on startup
