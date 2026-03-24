@@ -1,12 +1,11 @@
 package org.firstinspires.ftc.teamcode.kishi;
 
-import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
-import org.firstinspires.ftc.teamcode.GoBildaPinpointDriver;
 
 /**
  * Odometry.java — Pinpoint Position Tracking Subsystem
@@ -47,8 +46,11 @@ public class Odometry {
     // The Pinpoint co-processor — does the heavy math internally at 1500 Hz
     private final GoBildaPinpointDriver pinpoint;
 
-    // Tracks how often update() gets called from OpMode (diagnostic only)
-    private final ElapsedTime loopTimer = new ElapsedTime();
+    // Previous position snapshot for velocity estimation (delta-based)
+    // This SDK version does not expose getVelX/getVelY/getHeadingVelocity,
+    // so we compute velocity by differencing consecutive positions each loop.
+    private double prevX   = 0, prevY   = 0, prevH   = 0;
+    private long   prevTimeNs = System.nanoTime();
 
     // ----------------------------------
     // CONSTRUCTOR
@@ -79,6 +81,11 @@ public class Odometry {
      */
     public void update() {
         pinpoint.update();
+        // Snapshot current position for velocity estimation on next call
+        prevX  = getX();
+        prevY  = getY();
+        prevH  = getHeadingDegrees();
+        prevTimeNs = System.nanoTime();
     }
 
     // ----------------------------------
@@ -116,20 +123,29 @@ public class Odometry {
     // ----------------------------------
     // VELOCITY GETTERS
     // ----------------------------------
+    // NOTE: This SDK version of GoBildaPinpointDriver only exposes getPosition().
+    // Velocity is estimated by differencing two consecutive update() calls.
+    // Accuracy improves as loop rate increases — keep update() at top of loop.
 
-    /** X velocity in mm/s — how fast the robot is moving sideways right now */
+    private double velocityEstimate(double current, double previous) {
+        double dtSec = (System.nanoTime() - prevTimeNs) / 1e9;
+        if (dtSec < 1e-6) return 0; // avoid divide-by-zero on first call
+        return (current - previous) / dtSec;
+    }
+
+    /** X velocity in mm/s (estimated from consecutive position deltas) */
     public double getVelocityX() {
-        return pinpoint.getVelocity().getX(DistanceUnit.MM);
+        return velocityEstimate(getX(), prevX);
     }
 
-    /** Y velocity in mm/s — how fast the robot is moving forward/backward right now */
+    /** Y velocity in mm/s (estimated from consecutive position deltas) */
     public double getVelocityY() {
-        return pinpoint.getVelocity().getY(DistanceUnit.MM);
+        return velocityEstimate(getY(), prevY);
     }
 
-    /** Angular velocity in degrees/s — how fast the robot is turning right now */
+    /** Angular velocity in degrees/s (estimated from consecutive heading deltas) */
     public double getAngularVelocityDegPerSec() {
-        return pinpoint.getVelocity().getHeading(AngleUnit.DEGREES);
+        return velocityEstimate(getHeadingDegrees(), prevH);
     }
 
     // ----------------------------------
