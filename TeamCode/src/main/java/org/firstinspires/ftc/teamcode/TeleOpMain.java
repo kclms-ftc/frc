@@ -54,6 +54,9 @@ public class TeleOpMain extends LinearOpMode {
         // ----------------------------------
         while (opModeIsActive()) {
 
+            // Update odometry (ask Pinpoint for latest position)
+            robot.odometry.update();
+
             // ----------------------
             // 1. DRIVE CONTROL
             // ----------------------
@@ -106,7 +109,8 @@ public class TeleOpMain extends LinearOpMode {
 
             telemetry.addData("Drive Mode", robot.drivetrain.getSpeedMode().name());
 
-            // Show shooter info
+            // Show subsystem telemetry
+            robot.odometry.displayTelemetry(telemetry);
             robot.shooter.displayTelemetry(telemetry);
 
             telemetry.update();
