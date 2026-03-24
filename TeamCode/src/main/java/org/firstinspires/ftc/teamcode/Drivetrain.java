@@ -22,7 +22,7 @@ public class Drivetrain {
     private double precisionSpeedMultiplier = 0.4;
     private double normalSpeedMultiplier = 1.0;
     private boolean autoMoveActive;
-
+    private double  deadZoneValue = 0.05;
     private double targetX, targetY, targetHeading;
 
     // MAIN METHODS
@@ -54,9 +54,9 @@ public class Drivetrain {
 
         // if automove not active drive with gamepad
         else {
-            double forward  = -applyDeadzone(gp.left_stick_y);  // forward/backward (invert Y so forward = positive)
-            double strafe =  applyDeadzone(gp.left_stick_x);    // left/right
-            double rotate =  applyDeadzone(gp.right_stick_x);   // rotation
+            double forward  = -gp.left_stick_y;  // forward/backward (invert Y so forward = positive)
+            double strafe =  gp.left_stick_x;    // left/right
+            double rotate =  gp.right_stick_x;   // rotation
 
             drive(forward, strafe, rotate);
         }
@@ -104,13 +104,38 @@ public class Drivetrain {
         return true;
     }
 
-    public double applyDeadzone(double value) {
-        // copy method from gamma drivetrain
-        return 0.0;
-    }
+    // returns zero if joystick value too little to care about
+    private double deadzone(double value) {return Math.abs(value) > deadZoneValue ? value : 0;}
 
     public void drive(double forward, double strafe, double rotate) {
-        // copy method from gamma drivetrain and check it
+        // apply deadzones too all three axes
+        forward  = deadzone(forward);
+        strafe = deadzone(strafe);
+        rotate = deadzone(rotate);
+
+        // mecanum wheels
+        double w0 = forward - strafe - rotate;   // NE (front-right)
+        double w1 = forward + strafe - rotate;   // SE (back-right)
+        double w2 = forward - strafe + rotate;   // SW (back-left)
+        double w3 = forward + strafe + rotate;   // NW (front-left)
+
+        // normalisation -> scale all down proportionality if over 1.0
+        double max = Math.max(
+                Math.max(Math.abs(w0), Math.abs(w1)),
+                Math.max(Math.abs(w2), Math.abs(w3)));
+
+        if (max > 1.0) {
+            w0 /= max;
+            w1 /= max;
+            w2 /= max;
+            w3 /= max;
+        }
+
+        // apply power scaled by speedMultiplier (normal or precision)
+        neWheel.setPower(w0 * speedMultiplier);
+        seWheel.setPower(w1 * speedMultiplier);
+        swWheel.setPower(w2 * speedMultiplier);
+        nwWheel.setPower(w3 * speedMultiplier);
     }
 
 }
