@@ -15,8 +15,8 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
  */
 public class Intake {
 
-    private static final double INTAKE_POWER = 0.85;
-    private static final double EJECT_POWER  = 0.60;
+    private static final double INTAKE_POWER = 1.00; // maxed — ski feedback: needs more pull
+    private static final double EJECT_POWER  = 0.75; // bumped up to match intake force
 
     private final DcMotorEx motor;
 
