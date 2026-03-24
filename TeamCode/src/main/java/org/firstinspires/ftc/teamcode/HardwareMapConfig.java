@@ -1,12 +1,12 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.teamcode.GoBildaPinpointDriver;
 
 // central hardware map — every subsystem pulls from here
 // names MUST match driver station config exactly
@@ -53,7 +53,7 @@ public class HardwareMapConfig {
         // Offsets are mm from the robot's tracking center (usually robot center)
         // Positive X = right of center, Positive Y = forward of center
         pinpoint = hw.get(GoBildaPinpointDriver.class, "pinpoint");
-        pinpoint.setOffsets(-45, -126, DistanceUnit.MM); // tune to your actual pod positions (see adjustments.md)
+        pinpoint.setOffsets(-45, -126); // tune to your actual pod positions (see adjustments.md)
         pinpoint.setEncoderResolution(
             GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD  // 2000 CPR, 32mm wheel
         );
