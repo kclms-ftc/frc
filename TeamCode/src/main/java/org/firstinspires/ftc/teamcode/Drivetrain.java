@@ -1,7 +1,9 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Gamepad;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
@@ -33,6 +35,18 @@ public class Drivetrain {
         seWheel = hw.wheel_1;
         swWheel = hw.wheel_2;
         nwWheel = hw.wheel_3;
+
+        // right motors forward, left motors backward
+        neWheel.setDirection(DcMotorSimple.Direction.FORWARD);
+        seWheel.setDirection(DcMotorSimple.Direction.FORWARD);
+        swWheel.setDirection(DcMotorSimple.Direction.REVERSE);
+        nwWheel.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        // motors brake when no power rather than float
+        neWheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        neWheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        neWheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        neWheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
     }
     public void loop(Gamepad gp) {
 
