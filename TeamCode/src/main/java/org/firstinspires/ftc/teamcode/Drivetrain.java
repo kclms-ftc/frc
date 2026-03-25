@@ -25,13 +25,18 @@ public class Drivetrain {
     // These allow the driver to switch according to precisions and speed
     private enum SpeedMode {NORMAL, PRECISION};
     private boolean lastDpadDown = false;
+    private boolean lastB = false;
     private SpeedMode speedMode = SpeedMode.NORMAL;
     private double speedMultiplier = 1.0;
     private double precisionSpeedMultiplier = 0.4;
     private double normalSpeedMultiplier = 1.0;
     private boolean autoMoveActive;
     private double  deadZoneValue = 0.05;
-    private double targetX, targetY, targetHeading;
+
+    // CHANGE THESE TO TARGET POSITION
+    private double targetX = 500;
+    private double targetY = 200;
+    private double targetHeading = 0;
 
     // MAIN METHODS
 
@@ -54,21 +59,25 @@ public class Drivetrain {
 
         // motors brake when no power rather than float
         neWheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        neWheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        neWheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        neWheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        seWheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        swWheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        nwWheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
     }
 
     // main loop called 50 times per second
     public void loop(Gamepad gp) {
 
+        pinpoint.update();
+
         // set speed mode according to driver
         toggleSpeedMode(gp.dpad_down);
 
         // check auto move button
-        if (gp.b) {
+        if (gp.b && !lastB) {
             autoMoveActive = true;
         }
+
+        lastB = gp.b;
 
         // drive to target with odometry if autoMove active
         if (autoMoveActive) {
@@ -111,7 +120,7 @@ public class Drivetrain {
                 speedMode = SpeedMode.PRECISION;
                 speedMultiplier = precisionSpeedMultiplier;
             } else {
-                speedMode = SpeedMode.PRECISION;
+                speedMode = SpeedMode.NORMAL;
                 speedMultiplier = normalSpeedMultiplier;
             }
         }
@@ -129,6 +138,8 @@ public class Drivetrain {
         double errorX = x - currentX;
         double errorY = y - currentY;
         double errorHeading = heading - currentHeading;
+        // wrap to [-pi, pi]
+        errorHeading = Math.atan2(Math.sin(errorHeading), Math.cos(errorHeading));
 
         double sin = Math.sin(-currentHeading);
         double cos = Math.cos(-currentHeading);
@@ -159,12 +170,14 @@ public class Drivetrain {
     public boolean targetReached() {
         double distanceX = targetX - pinpoint.getPosX(DistanceUnit.MM);
         double distanceY = targetY - pinpoint.getPosY(DistanceUnit.MM);
+        double headingError = targetHeading - pinpoint.getHeading(AngleUnit.RADIANS);
+        headingError = Math.atan2(Math.sin(headingError), Math.cos(headingError));
 
         // convert to single distance
         double distance = Math.hypot(distanceX, distanceY);
 
         // reached is considered within 20mm of target
-        return distance < 20;
+        return distance < 20 && Math.abs(headingError) < 0.05;
     }
 
     // returns zero if joystick value too little to care about
