@@ -28,7 +28,7 @@ public class Shooter {
     private long stateStartTime = 0;
     private boolean lastX = false;
     public boolean shootingCurrently = false;
-
+    private int shotsRemaining = 0;
     // MAIN METHODS
 
     // constructor method
@@ -82,14 +82,22 @@ public class Shooter {
                 }
                 break;
 
-            // servo arm pushes ball
+            // servo arm pushes 3 balls
             case FEEDING:
                 feederServo.setPosition(1);
                 // assumes 0.3 second servo movement
                 if (timeElapsed(300)) {
                     feederServo.setPosition(0);
-                    state = ShootState.DONE;
-                    stateStartTime = System.currentTimeMillis();
+                    shotsRemaining -= 1;
+                    // if 3 balls been shot
+                    if (shotsRemaining > 0) {
+                        state = ShootState.READY;
+                        stateStartTime = System.currentTimeMillis();
+                    }
+                    else { // still more balls to shoot
+                        state = ShootState.DONE;
+                        stateStartTime = System.currentTimeMillis();
+                    }
                 }
                 break;
 
@@ -120,6 +128,7 @@ public class Shooter {
 
     // start shooting
     public void startShootingSequence() {
+        shotsRemaining = 3;
         state = ShootState.SPINNING_UP;
         stateStartTime = System.currentTimeMillis();
         shootingCurrently = true;
