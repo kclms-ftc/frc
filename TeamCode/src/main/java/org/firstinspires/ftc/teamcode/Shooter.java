@@ -16,7 +16,18 @@ public class Shooter {
     private DcMotorEx shooterMotor0, shooterMotor1;
     private Servo feederServo, stopperServo;
 
-    public boolean shootingCurrently = false;
+    // state machine
+    private enum ShootState {
+        IDLE,
+        SPINNING_UP,
+        READY,
+        FEEDING,
+        DONE
+    }
+    private ShootState state = ShootState.IDLE;
+    private long stateStartTime = 0;
+    private boolean lastX = false;
+
     // MAIN METHODS
 
     // constructor method
@@ -29,8 +40,66 @@ public class Shooter {
 
     // main loop called 50 times per second
     public void loop(Gamepad gp) {
-        if(gp.x) {
-            if(!shootingCurrently) startShootingSequence();
+        // check if x just pressed
+        if(gp.x && !lastX) {
+            if (state == ShootState.IDLE) {
+                startShootingSequence();
+            }
+        }
+        lastX = gp.x;
+
+        // state machine
+        switch (state) {
+            // not shooting
+            case IDLE:
+                // change power here if motors running at low speed when idle
+                shooterMotor0.setPower(0);
+                shooterMotor1.setPower(0);
+                stopperServo.setPosition(0);
+                feederServo.setPosition(0);
+                break;
+
+            // get shooter motors up to speed
+            case SPINNING_UP:
+                shooterMotor0.setPower(1.0);
+                shooterMotor1.setPower(1.0);
+
+                // assumes spin up takes 1.5s
+                if (timeElapsed(1500)) {
+                    state = ShootState.READY;
+                    stateStartTime = System.currentTimeMillis();
+                }
+                break;
+
+            // open stopper, ready to shoot
+            case READY:
+                stopperServo.setPosition(1);
+                // assumes 0.3 second servo movement
+                if (timeElapsed(300)) {
+                    state = ShootState.FEEDING;
+                    stateStartTime = System.currentTimeMillis();
+                }
+                break;
+
+            // servo arm pushes ball
+            case FEEDING:
+                feederServo.setPosition(1);
+                // assumes 0.3 second servo movement
+                if (timeElapsed(300)) {
+                    feederServo.setPosition(1);
+                    state = ShootState.DONE;
+                    stateStartTime = System.currentTimeMillis();
+                }
+                break;
+
+            // shooting sequence completed
+            case DONE:
+                // close stopper
+                stopperServo.setPosition(0);
+                if (timeElapsed(300)) {
+                    state = ShootState.IDLE;
+                }
+                break;
         }
     }
 
@@ -47,7 +116,14 @@ public class Shooter {
 
     // HELPER METHODS
 
+    // start shooting
     public void startShootingSequence() {
-        // use shooter gamma to make this and more helper functions probably
+        state = ShootState.SPINNING_UP;
+        stateStartTime = System.currentTimeMillis();
+    }
+
+    // check how long current state has been active
+    public boolean timeElapsed(long ms) {
+        return System.currentTimeMillis() - stateStartTime >= ms;
     }
 }
