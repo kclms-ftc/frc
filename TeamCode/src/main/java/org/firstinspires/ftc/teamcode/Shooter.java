@@ -27,6 +27,7 @@ public class Shooter {
     private ShootState state = ShootState.IDLE;
     private long stateStartTime = 0;
     private boolean lastX = false;
+    public boolean shootingCurrently = false;
 
     // MAIN METHODS
 
@@ -86,7 +87,7 @@ public class Shooter {
                 feederServo.setPosition(1);
                 // assumes 0.3 second servo movement
                 if (timeElapsed(300)) {
-                    feederServo.setPosition(1);
+                    feederServo.setPosition(0);
                     state = ShootState.DONE;
                     stateStartTime = System.currentTimeMillis();
                 }
@@ -97,6 +98,7 @@ public class Shooter {
                 // close stopper
                 stopperServo.setPosition(0);
                 if (timeElapsed(300)) {
+                    shootingCurrently = false;
                     state = ShootState.IDLE;
                 }
                 break;
@@ -120,6 +122,7 @@ public class Shooter {
     public void startShootingSequence() {
         state = ShootState.SPINNING_UP;
         stateStartTime = System.currentTimeMillis();
+        shootingCurrently = true;
     }
 
     // check how long current state has been active
