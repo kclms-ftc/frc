@@ -157,7 +157,14 @@ public class Drivetrain {
 
     // checks if bot is in shooting position
     public boolean targetReached() {
-        return true;
+        double distanceX = targetX - pinpoint.getPosX(DistanceUnit.MM);
+        double distanceY = targetY - pinpoint.getPosY(DistanceUnit.MM);
+
+        // convert to single distance
+        double distance = Math.hypot(distanceX, distanceY);
+
+        // reached is considered within 20mm of target
+        return distance < 20;
     }
 
     // returns zero if joystick value too little to care about
