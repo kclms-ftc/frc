@@ -15,6 +15,7 @@ public class Turret {
         turretMotor = hw.turret_motor;
     }
 
+    // main loop called 50 times per second
     public void loop(Gamepad gp, boolean shooterActive) {
         if (shooterActive) {
             if (hasValidTarget()) {

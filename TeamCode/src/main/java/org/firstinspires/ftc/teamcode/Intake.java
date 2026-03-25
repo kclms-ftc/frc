@@ -23,6 +23,7 @@ public class Intake {
         intakeMotor = hw.intake_motor;
     }
 
+    // main loop called 50 times per second
     public void loop(Gamepad gp) {
         intakeMotor.setPower(intakePower);
 

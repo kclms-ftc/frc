@@ -26,6 +26,8 @@ public class Shooter {
         feederServo = hw.feeder_servo;
         stopperServo = hw.stopper_servo;
     }
+
+    // main loop called 50 times per second
     public void loop(Gamepad gp) {
         if(gp.x) {
             if(!shootingCurrently) startShootingSequence();
