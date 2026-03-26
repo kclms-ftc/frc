@@ -60,7 +60,7 @@ public class HardwareMapConfig {
         intake_motor = hw.get(DcMotorEx.class, "intake_motor");
 
         // Turret
-        turret_motor = hw.get(DcMotorEx.class, "turret_motor");
+//        turret_motor = hw.get(DcMotorEx.class, "turret_motor");
 
         // Webcam
         webcam = hw.get(WebcamName.class, "webcam");
