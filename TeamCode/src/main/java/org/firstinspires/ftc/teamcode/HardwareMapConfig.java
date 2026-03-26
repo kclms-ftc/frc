@@ -32,8 +32,7 @@ public class HardwareMapConfig {
     // intake (single roller motor)
     public DcMotorEx intake_motor;
 
-    // turret (rotation motor)
-    public DcMotorEx turret_motor;
+    // getting rid of turret...2
 
     // webcam
     public WebcamName webcam;
@@ -59,8 +58,7 @@ public class HardwareMapConfig {
         // Intake
         intake_motor = hw.get(DcMotorEx.class, "intake_motor");
 
-        // Turret
-//        turret_motor = hw.get(DcMotorEx.class, "turret_motor");
+        // getting rid of turret...2
 
         // Webcam
         webcam = hw.get(WebcamName.class, "webcam");

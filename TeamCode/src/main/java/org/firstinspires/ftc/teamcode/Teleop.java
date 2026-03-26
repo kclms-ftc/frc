@@ -11,7 +11,7 @@ public class Teleop extends OpMode {
     private Drivetrain drivetrain;
     private Intake intake;
     private Shooter shooter;
-//    private Turret turret;
+    // getting rid of turret...2
 
     @Override
     public void init() {
@@ -20,7 +20,7 @@ public class Teleop extends OpMode {
         drivetrain = new Drivetrain(hw);
         intake = new Intake(hw);
         shooter = new Shooter(hw);
-//        turret = new Turret(hw);
+        // getting rid of turret...2
 
         telemetry.addData("Status", "Init completed");
         telemetry.update();
@@ -31,7 +31,7 @@ public class Teleop extends OpMode {
         // main loops for all subsystems
         drivetrain.loop(gamepad1);
         intake.loop(gamepad1);
-//        turret.loop(gamepad1, shooter.shootingCurrently);
+        // getting rid of turret...2
         shooter.loop(gamepad1);
 
         // update telemetry for all subsystems
@@ -49,6 +49,6 @@ public class Teleop extends OpMode {
         drivetrain.stop();
         intake.stop();
         shooter.stop();
-//        turret.stop();
+        // getting rid of turret...2
     }
 }

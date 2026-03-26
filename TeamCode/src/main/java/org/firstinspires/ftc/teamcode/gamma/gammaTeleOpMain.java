@@ -25,8 +25,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
  *   (Neither)           → NORMAL speed (65%)
  *   Right trigger >50%  → spin up flywheels (shooter)
  *   A button            → fire one ball (non-blocking)
- *   Left bumper (hold)  → rotate turret left (counter-clockwise)
- *   Right bumper (hold) → rotate turret right (clockwise)
+ *   // getting rid of turret...2
  *   Y button            → cycle intake (OFF -> INTAKE -> EJECT)
  */
 @TeleOp(name = "TeleOp — Single Gamepad")
@@ -72,14 +71,7 @@ public class gammaTeleOpMain extends LinearOpMode {
                 case OFF:    robot.intake.stop(); break;
             }
 
-            // ---- 5. TURRET (Gamepad 1 Bumpers L1/R1) ----
-            if (gamepad1.right_bumper) {
-                robot.turret.rotateRight();
-            } else if (gamepad1.left_bumper) {
-                robot.turret.rotateLeft();
-            } else {
-                robot.turret.stop();
-            }
+            // getting rid of turret...2
 
             // ---- 2. DRIVE (Gamepad 1) ----
             double drive  = -applyDeadzone(gamepad1.left_stick_y);  // invert Y so forward = positive
