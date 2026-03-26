@@ -6,53 +6,75 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 /*
-GAMEPAD:
-d pad up held - intake reversed
-a - toggle low or normal intake speed
+gamepad:
+a - cycle intake mode: off -> slow (0.8) -> fast (1.0) -> outtake (0.75) -> off
+defaults to off
  */
 
 public class Intake {
 
     private DcMotorEx intakeMotor;
 
-    private static double intakePower = 0.85;
-    private static double lowIntakePower = 0.3;
-    private static double outtakePower = -0.6;
+    // four modes in cycle order
+    private enum IntakeMode {
+        OFF, SLOW, FAST, OUTTAKE
+    }
 
-    private boolean lowSpeedMode = false;
-    private boolean lastToggleButton = false;
+    // 0, +0.8, +1.0, -0.75
+    private IntakeMode mode = IntakeMode.OFF;
 
-    // MAIN METHODS
+    private boolean lastA = false;
 
-    // constructor method
+    // main methods
+
     public Intake(HardwareMapConfig hw) {
         intakeMotor = hw.intake_motor;
     }
 
-    // main loop called 50 times per second
+    // called 50 times per second
     public void loop(Gamepad gp) {
-        // toggle intake speed
-        if (gp.left_bumper && !lastToggleButton) {
-            lowSpeedMode = !lowSpeedMode;
+        // advance mode on each fresh press of a and use cases
+        if (gp.a && !lastA) {
+            switch (mode) {
+                case OFF:
+                    mode = IntakeMode.SLOW;
+                    break;
+                case SLOW:
+                    mode = IntakeMode.FAST;
+                    break;
+                case FAST:
+                    mode = IntakeMode.OUTTAKE;
+                    break;
+                case OUTTAKE:
+                    mode = IntakeMode.OFF;
+                    break;
+            }
         }
-        lastToggleButton = gp.left_bumper;
+        lastA = gp.a;
 
-        if (gp.dpad_up) {
-            intakeMotor.setPower(outtakePower);
-            return;
-        }
-        if (lowSpeedMode) {
-            intakeMotor.setPower(lowIntakePower);
-        } else {
-            intakeMotor.setPower(intakePower);
+        // apply power for current mode and using cases
+        switch (mode) {
+            case OFF:
+                intakeMotor.setPower(0);
+                break;
+            case SLOW:
+                intakeMotor.setPower(0.8);
+                break;
+            case FAST:
+                intakeMotor.setPower(1.0);
+                break;
+            case OUTTAKE:
+                intakeMotor.setPower(-0.75);
+                break;
         }
     }
 
     public void updateTelemetry(Telemetry t) {
-
+        t.addData("intake mode", mode); // might be helpful
     }
 
     public void stop() {
+        mode = IntakeMode.OFF;
         intakeMotor.setPower(0);
     }
 
