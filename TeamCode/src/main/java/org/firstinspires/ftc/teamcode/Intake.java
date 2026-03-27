@@ -73,8 +73,8 @@ public class Intake {
     }
 
     public void updateTelemetry(Telemetry t) {
-        t.addData("intake mode", mode); // might be helpful
-        t.addData("motor power", intakeMotor.getPower());
+//        t.addData("intake mode", mode); // might be helpful
+//        t.addData("motor power", intakeMotor.getPower());
     }
 
     public void stop() {

@@ -41,14 +41,12 @@ public class Teleop extends OpMode {
         shooter.updateTelemetry(telemetry);
 //        drivetrain.updateTelemetry(telemetry);
         telemetry.addData("a", gamepad1.a);
-        telemetry.update();
+
 
         addMotorTelemetry("intake", hw.intake_motor);
-        addMotorTelemetry("intake", hw.wheel_0);
-        addMotorTelemetry("intake", hw.wheel_1);
-        addMotorTelemetry("intake", hw.wheel_2);
-        addMotorTelemetry("intake", hw.wheel_2);
-
+        addMotorTelemetry("intake", hw.shooter_motor_1);
+        addMotorTelemetry("intake", hw.shooter_motor_0);
+        telemetry.update();
 
     }
 

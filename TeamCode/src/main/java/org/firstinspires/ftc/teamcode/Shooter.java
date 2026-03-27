@@ -39,8 +39,6 @@ public class Shooter {
         shooterMotor1 = hw.shooter_motor_1;
         feederServo = hw.feeder_servo;
         stopperServo = hw.stopper_servo;
-        shooterMotor0.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        shooterMotor0.setDirection(DcMotor.Direction.REVERSE);
     }
 
     // main loop called 50 times per second
