@@ -20,7 +20,7 @@ public class AprilTagWebcam {
     public void init(HardwareMap hwMap, Telemetry telemetry){
         this.telemetry = telemetry;
 
-        aprilTagProcessor = new AprilTagProcessor.Builder();
+        aprilTagProcessor = new AprilTagProcessor.Builder().build(); //  The expression new AprilTagProcessor.Builder() returns a Builder object
     }
 
 
