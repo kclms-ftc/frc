@@ -17,11 +17,11 @@ public class AprilTagWebcam {
 
     private Telemetry telemetry;
 
-    public void init(HardwareMap hwMap, Telemetry telemetry){
+    public void init(HardwareMap hwMap, Telemetry telemetry) {
         this.telemetry = telemetry;
 
-        aprilTagProcessor = new AprilTagProcessor.Builder().build(); //  The expression new AprilTagProcessor.Builder() returns a Builder object
+        aprilTagProcessor = new AprilTagProcessor.Builder().build(); // The expression new AprilTagProcessor.Builder()
+                                                                     // returns a Builder object
     }
-
 
 }
