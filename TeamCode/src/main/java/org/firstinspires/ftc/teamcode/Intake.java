@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
@@ -29,6 +30,8 @@ public class Intake {
 
     public Intake(HardwareMapConfig hw) {
         intakeMotor = hw.intake_motor;
+        intakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        intakeMotor.setDirection(DcMotor.Direction.REVERSE);
     }
 
     // called 50 times per second
@@ -71,6 +74,7 @@ public class Intake {
 
     public void updateTelemetry(Telemetry t) {
         t.addData("intake mode", mode); // might be helpful
+        t.addData("motor power", intakeMotor.getPower());
     }
 
     public void stop() {

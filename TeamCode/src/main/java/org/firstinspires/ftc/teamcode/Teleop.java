@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 @TeleOp(name = "new teleop")
 public class Teleop extends OpMode {
@@ -39,7 +40,15 @@ public class Teleop extends OpMode {
         intake.updateTelemetry(telemetry);
         shooter.updateTelemetry(telemetry);
 //        drivetrain.updateTelemetry(telemetry);
+        telemetry.addData("a", gamepad1.a);
         telemetry.update();
+
+        addMotorTelemetry("intake", hw.intake_motor);
+        addMotorTelemetry("intake", hw.wheel_0);
+        addMotorTelemetry("intake", hw.wheel_1);
+        addMotorTelemetry("intake", hw.wheel_2);
+        addMotorTelemetry("intake", hw.wheel_2);
+
 
     }
 
@@ -50,5 +59,19 @@ public class Teleop extends OpMode {
         intake.stop();
         shooter.stop();
         // getting rid of turret...2
+    }
+
+    private void addMotorTelemetry(String name, DcMotorEx m) {
+        if (m == null) {
+            telemetry.addData(name, "NULL (not mapped!)");
+            return;
+        }
+
+        telemetry.addLine("MOTOR: " + name);
+        telemetry.addData("Power", m.getPower());
+        telemetry.addData("Velocity", m.getVelocity());
+         telemetry.addData("Position", m.getCurrentPosition());        telemetry.addData("Mode", m.getMode());
+        telemetry.addData("ZeroPower", m.getZeroPowerBehavior());
+        telemetry.addData("Direction", m.getDirection());
     }
 }

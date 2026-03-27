@@ -1,6 +1,8 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
 
@@ -37,6 +39,8 @@ public class Shooter {
         shooterMotor1 = hw.shooter_motor_1;
         feederServo = hw.feeder_servo;
         stopperServo = hw.stopper_servo;
+        shooterMotor0.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        shooterMotor0.setDirection(DcMotor.Direction.REVERSE);
     }
 
     // main loop called 50 times per second
