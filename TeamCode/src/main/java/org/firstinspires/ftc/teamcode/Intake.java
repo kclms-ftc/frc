@@ -72,6 +72,24 @@ public class Intake {
         }
     }
 
+    public void testLoop(Gamepad gp, Telemetry t) {
+        double power = 0.0;
+
+        if (gp.a) {
+            power = 0.2;
+        } else if (gp.b) {
+            power = 0.5;
+        } else if (gp.x) {
+            power = -0.2;
+        }
+
+        intakeMotor.setPower(power);
+
+        t.addData("Intake test power", power);
+        t.addData("Velocity", intakeMotor.getVelocity());
+        t.addData("Position", intakeMotor.getCurrentPosition());
+    }
+
     public void updateTelemetry(Telemetry t) {
         t.addData("intake mode", mode); // might be helpful
         t.addData("motorspeed", intakeMotor.getVelocity());
