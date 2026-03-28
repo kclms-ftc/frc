@@ -1,6 +1,8 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
 
@@ -16,6 +18,14 @@ public class Shooter {
     private DcMotorEx shooterMotor0, shooterMotor1;
     private Servo feederServo, stopperServo;
 
+    // loop2
+    private boolean lastX = false;
+    private boolean lastY = false;
+
+    private boolean flywheelOn = false;
+    private boolean feederMoving = false;
+    private long feederStartTime = 0;
+
     // state machine
     private enum ShootState {
         IDLE,
@@ -26,7 +36,7 @@ public class Shooter {
     }
     private ShootState state = ShootState.IDLE;
     private long stateStartTime = 0;
-    private boolean lastX = false;
+//    private boolean lastX = false;
     public boolean shootingCurrently = false;
     private int shotsRemaining = 0;
     // MAIN METHODS
@@ -40,79 +50,106 @@ public class Shooter {
     }
 
     // main loop called 50 times per second
-    public void loop(Gamepad gp) {
-        // check if x just pressed
-        if(gp.x && !lastX) {
-            if (state == ShootState.IDLE) {
-                startShootingSequence();
-            }
+//    public void loop(Gamepad gp) {
+//        // check if x just pressed
+//        if(gp.x && !lastX) {
+//            if (state == ShootState.IDLE) {
+//                startShootingSequence();
+//            }
+//        }
+//        lastX = gp.x;
+//
+//        // state machine
+//        switch (state) {
+//            // not shooting
+//            case IDLE:
+//                // change power here if motors running at low speed when idle
+//                shooterMotor0.setPower(0);
+//                shooterMotor1.setPower(0);
+//                stopperServo.setPosition(0);
+//                feederServo.setPosition(0);
+//                break;
+//
+//            // get shooter motors up to speed
+//            case SPINNING_UP:
+//                shooterMotor0.setPower(-1.0);
+//                shooterMotor1.setPower(-1.0);
+//
+//                // assumes spin up takes 1.5s
+//                if (timeElapsed(1500)) {
+//                    state = ShootState.READY;
+//                    stateStartTime = System.currentTimeMillis();
+//                }
+//                break;
+//
+//            // open stopper, ready to shoot
+//            case READY:
+//                stopperServo.setPosition(1);
+//                // assumes 0.3 second servo movement
+//                if (timeElapsed(300)) {
+//                    state = ShootState.FEEDING;
+//                    stateStartTime = System.currentTimeMillis();
+//                }
+//                break;
+//
+//            // servo arm pushes 3 balls
+//            case FEEDING:
+//                feederServo.setPosition(1);
+//                // assumes 0.3 second servo movement
+//                if (timeElapsed(300)) {
+//                    feederServo.setPosition(0);
+//                    shotsRemaining -= 1;
+//                    // if 3 balls been shot
+//                    if (shotsRemaining > 0) {
+//                        state = ShootState.READY;
+//                        stateStartTime = System.currentTimeMillis();
+//                    }
+//                    else { // still more balls to shoot
+//                        state = ShootState.DONE;
+//                        stateStartTime = System.currentTimeMillis();
+//                    }
+//                }
+//                break;
+//
+//            // shooting sequence completed
+//            case DONE:
+//                // close stopper
+//                stopperServo.setPosition(0);
+//                if (timeElapsed(300)) {
+//                    shootingCurrently = false;
+//                    state = ShootState.IDLE;
+//                }
+//                break;
+//        }
+//    }
+
+    public void loop2(Gamepad gp) {
+        if (gp == null) return;
+
+        // X toggles flywheel on/off
+        if (gp.x && !lastX) {
+            flywheelOn = !flywheelOn;
         }
+
+        if (flywheelOn) {
+            shooterMotor0.setPower(-1.0);
+            shooterMotor1.setPower(-1.0);
+        } else {
+            shooterMotor0.setPower(0.0);
+            shooterMotor1.setPower(0.0);
+        }
+
+        // Y starts feeder pulse
+
+
+        if (gp.y && !lastY) {
+            feederServo.setPosition(1.0);   // push out
+        }
+
+
         lastX = gp.x;
-
-        // state machine
-        switch (state) {
-            // not shooting
-            case IDLE:
-                // change power here if motors running at low speed when idle
-                shooterMotor0.setPower(0);
-                shooterMotor1.setPower(0);
-                stopperServo.setPosition(0);
-                feederServo.setPosition(0);
-                break;
-
-            // get shooter motors up to speed
-            case SPINNING_UP:
-                shooterMotor0.setPower(1.0);
-                shooterMotor1.setPower(1.0);
-
-                // assumes spin up takes 1.5s
-                if (timeElapsed(1500)) {
-                    state = ShootState.READY;
-                    stateStartTime = System.currentTimeMillis();
-                }
-                break;
-
-            // open stopper, ready to shoot
-            case READY:
-                stopperServo.setPosition(1);
-                // assumes 0.3 second servo movement
-                if (timeElapsed(300)) {
-                    state = ShootState.FEEDING;
-                    stateStartTime = System.currentTimeMillis();
-                }
-                break;
-
-            // servo arm pushes 3 balls
-            case FEEDING:
-                feederServo.setPosition(1);
-                // assumes 0.3 second servo movement
-                if (timeElapsed(300)) {
-                    feederServo.setPosition(0);
-                    shotsRemaining -= 1;
-                    // if 3 balls been shot
-                    if (shotsRemaining > 0) {
-                        state = ShootState.READY;
-                        stateStartTime = System.currentTimeMillis();
-                    }
-                    else { // still more balls to shoot
-                        state = ShootState.DONE;
-                        stateStartTime = System.currentTimeMillis();
-                    }
-                }
-                break;
-
-            // shooting sequence completed
-            case DONE:
-                // close stopper
-                stopperServo.setPosition(0);
-                if (timeElapsed(300)) {
-                    shootingCurrently = false;
-                    state = ShootState.IDLE;
-                }
-                break;
-        }
+        lastY = gp.y;
     }
-
     public void updateTelemetry(Telemetry t) {
 
     }

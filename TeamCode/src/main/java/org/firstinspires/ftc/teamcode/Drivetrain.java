@@ -23,7 +23,10 @@ public class Drivetrain {
     private GoBildaPinpointDriver pinpoint;
 
     // These allow the driver to switch according to precisions and speed
-    private enum SpeedMode {NORMAL, PRECISION};
+    private enum SpeedMode {
+        NORMAL, PRECISION
+    };
+
     private boolean lastDpadDown = false;
     private boolean lastB = false;
     private SpeedMode speedMode = SpeedMode.NORMAL;
@@ -31,7 +34,7 @@ public class Drivetrain {
     private double precisionSpeedMultiplier = 0.4;
     private double normalSpeedMultiplier = 1.0;
     private boolean autoMoveActive;
-    private double  deadZoneValue = 0.05;
+    private double deadZoneValue = 0.05;
 
     // CHANGE THESE TO TARGET POSITION
     private double targetX = 500;
@@ -89,9 +92,9 @@ public class Drivetrain {
 
         // if automove not active drive with gamepad
         else {
-            double forward  = -gp.left_stick_y;  // forward/backward (invert Y so forward = positive)
-            double strafe =  gp.left_stick_x;    // left/right
-            double rotate =  gp.right_stick_x;   // rotation
+            double forward = -gp.left_stick_y; // forward/backward (invert Y so forward = positive)
+            double strafe = gp.left_stick_x; // left/right
+            double rotate = gp.right_stick_x; // rotation
 
             drive(forward, strafe, rotate);
         }
@@ -181,20 +184,22 @@ public class Drivetrain {
     }
 
     // returns zero if joystick value too little to care about
-    private double deadzone(double value) {return Math.abs(value) > deadZoneValue ? value : 0;}
+    private double deadzone(double value) {
+        return Math.abs(value) > deadZoneValue ? value : 0;
+    }
 
     // main drive method with calculations
     public void drive(double forward, double strafe, double rotate) {
         // apply deadzones too all three axes
-        forward  = deadzone(forward);
+        forward = deadzone(forward);
         strafe = deadzone(strafe);
         rotate = deadzone(rotate);
 
         // mecanum wheels
-        double w0 = forward - strafe - rotate;   // NE (front-right)
-        double w1 = forward + strafe - rotate;   // SE (back-right)
-        double w2 = forward - strafe + rotate;   // SW (back-left)
-        double w3 = forward + strafe + rotate;   // NW (front-left)
+        double w0 = forward - strafe - rotate; // NE (front-right)
+        double w1 = forward + strafe - rotate; // SE (back-right)
+        double w2 = forward - strafe + rotate; // SW (back-left)
+        double w3 = forward + strafe + rotate; // NW (front-left)
 
         // normalisation -> scale all down proportionality if over 1.0
         double max = Math.max(
