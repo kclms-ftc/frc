@@ -33,7 +33,7 @@ public class Teleop extends OpMode {
         drivetrain.loop(gamepad1);
         intake.loop(gamepad1);
         // getting rid of turret...2
-        shooter.loop(gamepad1);
+        shooter.loop2(gamepad1);
 
         // update telemetry for all subsystems
         drivetrain.updateTelemetry(telemetry);

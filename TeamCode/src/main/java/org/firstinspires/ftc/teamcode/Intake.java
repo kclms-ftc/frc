@@ -61,7 +61,7 @@ public class Intake {
                 intakeMotor.setPower(0);
                 break;
             case SLOW:
-                intakeMotor.setPower(0.0);
+                intakeMotor.setPower(0.2);
                 break;
             case FAST:
                 intakeMotor.setPower(1.0);

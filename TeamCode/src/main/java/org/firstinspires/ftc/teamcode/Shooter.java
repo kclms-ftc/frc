@@ -18,6 +18,14 @@ public class Shooter {
     private DcMotorEx shooterMotor0, shooterMotor1;
     private Servo feederServo, stopperServo;
 
+    // loop2
+    private boolean lastX = false;
+    private boolean lastY = false;
+
+    private boolean flywheelOn = false;
+    private boolean feederMoving = false;
+    private long feederStartTime = 0;
+
     // state machine
     private enum ShootState {
         IDLE,
@@ -28,7 +36,7 @@ public class Shooter {
     }
     private ShootState state = ShootState.IDLE;
     private long stateStartTime = 0;
-    private boolean lastX = false;
+//    private boolean lastX = false;
     public boolean shootingCurrently = false;
     private int shotsRemaining = 0;
     // MAIN METHODS
@@ -115,8 +123,32 @@ public class Shooter {
 //        }
 //    }
 
-    public void loop(Gamepad gp) {
+    public void loop2(Gamepad gp) {
+        if (gp == null) return;
 
+        // X toggles flywheel on/off
+        if (gp.x && !lastX) {
+            flywheelOn = !flywheelOn;
+        }
+
+        if (flywheelOn) {
+            shooterMotor0.setPower(-1.0);
+            shooterMotor1.setPower(-1.0);
+        } else {
+            shooterMotor0.setPower(0.0);
+            shooterMotor1.setPower(0.0);
+        }
+
+        // Y starts feeder pulse
+
+
+        if (gp.y && !lastY) {
+            feederServo.setPosition(1.0);   // push out
+        }
+
+
+        lastX = gp.x;
+        lastY = gp.y;
     }
     public void updateTelemetry(Telemetry t) {
 
