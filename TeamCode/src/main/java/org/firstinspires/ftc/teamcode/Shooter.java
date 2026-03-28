@@ -10,21 +10,13 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 /*
 GAMEPAD:
-x button - triggers shooting sequence
+x button - triggers shooting sequence (shoots 3 balls)
 */
 
 public class Shooter {
 
     private DcMotorEx shooterMotor0, shooterMotor1;
     private Servo feederServo, stopperServo;
-
-    // loop2
-    private boolean lastX = false;
-    private boolean lastY = false;
-
-    private boolean flywheelOn = false;
-    private boolean feederMoving = false;
-    private long feederStartTime = 0;
 
     // state machine
     private enum ShootState {
@@ -34,11 +26,13 @@ public class Shooter {
         FEEDING,
         DONE
     }
+
     private ShootState state = ShootState.IDLE;
     private long stateStartTime = 0;
-//    private boolean lastX = false;
+    private boolean lastX = false;
     public boolean shootingCurrently = false;
     private int shotsRemaining = 0;
+
     // MAIN METHODS
 
     // constructor method
@@ -49,121 +43,102 @@ public class Shooter {
         stopperServo = hw.stopper_servo;
     }
 
-    // main loop called 50 times per second
-//    public void loop(Gamepad gp) {
-//        // check if x just pressed
-//        if(gp.x && !lastX) {
-//            if (state == ShootState.IDLE) {
-//                startShootingSequence();
-//            }
-//        }
-//        lastX = gp.x;
-//
-//        // state machine
-//        switch (state) {
-//            // not shooting
-//            case IDLE:
-//                // change power here if motors running at low speed when idle
-//                shooterMotor0.setPower(0);
-//                shooterMotor1.setPower(0);
-//                stopperServo.setPosition(0);
-//                feederServo.setPosition(0);
-//                break;
-//
-//            // get shooter motors up to speed
-//            case SPINNING_UP:
-//                shooterMotor0.setPower(-1.0);
-//                shooterMotor1.setPower(-1.0);
-//
-//                // assumes spin up takes 1.5s
-//                if (timeElapsed(1500)) {
-//                    state = ShootState.READY;
-//                    stateStartTime = System.currentTimeMillis();
-//                }
-//                break;
-//
-//            // open stopper, ready to shoot
-//            case READY:
-//                stopperServo.setPosition(1);
-//                // assumes 0.3 second servo movement
-//                if (timeElapsed(300)) {
-//                    state = ShootState.FEEDING;
-//                    stateStartTime = System.currentTimeMillis();
-//                }
-//                break;
-//
-//            // servo arm pushes 3 balls
-//            case FEEDING:
-//                feederServo.setPosition(1);
-//                // assumes 0.3 second servo movement
-//                if (timeElapsed(300)) {
-//                    feederServo.setPosition(0);
-//                    shotsRemaining -= 1;
-//                    // if 3 balls been shot
-//                    if (shotsRemaining > 0) {
-//                        state = ShootState.READY;
-//                        stateStartTime = System.currentTimeMillis();
-//                    }
-//                    else { // still more balls to shoot
-//                        state = ShootState.DONE;
-//                        stateStartTime = System.currentTimeMillis();
-//                    }
-//                }
-//                break;
-//
-//            // shooting sequence completed
-//            case DONE:
-//                // close stopper
-//                stopperServo.setPosition(0);
-//                if (timeElapsed(300)) {
-//                    shootingCurrently = false;
-//                    state = ShootState.IDLE;
-//                }
-//                break;
-//        }
-//    }
-
+    // Called by Teleop — named loop2 to match Teleop.java's shooter.loop2() call
     public void loop2(Gamepad gp) {
-        if (gp == null) return;
-
-        // X toggles flywheel on/off
+        // detect fresh X press
         if (gp.x && !lastX) {
-            flywheelOn = !flywheelOn;
+            if (state == ShootState.IDLE) {
+                startShootingSequence();
+            }
         }
-
-        if (flywheelOn) {
-            shooterMotor0.setPower(-1.0);
-            shooterMotor1.setPower(-1.0);
-        } else {
-            shooterMotor0.setPower(0.0);
-            shooterMotor1.setPower(0.0);
-        }
-
-        // Y starts feeder pulse
-
-
-        if (gp.y && !lastY) {
-            feederServo.setPosition(1.0);   // push out
-        }
-
-
         lastX = gp.x;
-        lastY = gp.y;
-    }
-    public void updateTelemetry(Telemetry t) {
 
+        // state machine
+        switch (state) {
+
+            // not shooting — motors off, servos closed
+            case IDLE:
+                shooterMotor0.setPower(0);
+                shooterMotor1.setPower(0);
+                stopperServo.setPosition(0);
+                feederServo.setPosition(0);
+                break;
+
+            // spin flywheels up to speed (1.5 s)
+            case SPINNING_UP:
+                shooterMotor0.setPower(-1.0);
+                shooterMotor1.setPower(-1.0);
+                if (timeElapsed(1500)) {
+                    state = ShootState.READY;
+                    stateStartTime = System.currentTimeMillis();
+                }
+                break;
+
+            // open stopper servo, wait 0.3 s for full travel
+            case READY:
+                stopperServo.setPosition(1);
+                if (timeElapsed(300)) {
+                    state = ShootState.FEEDING;
+                    stateStartTime = System.currentTimeMillis();
+                }
+                break;
+
+            // push one ball with feeder servo, then decide whether to shoot again
+            case FEEDING:
+                feederServo.setPosition(1);
+                if (timeElapsed(300)) {
+                    feederServo.setPosition(0);   // retract feeder
+                    shotsRemaining -= 1;
+                    if (shotsRemaining > 0) {
+                        // more balls to shoot — go back to READY
+                        state = ShootState.READY;
+                        stateStartTime = System.currentTimeMillis();
+                    } else {
+                        // all balls fired — wrap up
+                        state = ShootState.DONE;
+                        stateStartTime = System.currentTimeMillis();
+                    }
+                }
+                break;
+
+            // close stopper, stop motors, return to IDLE
+            case DONE:
+                stopperServo.setPosition(0);
+                if (timeElapsed(300)) {
+                    shooterMotor0.setPower(0);
+                    shooterMotor1.setPower(0);
+                    shootingCurrently = false;
+                    state = ShootState.IDLE;
+                }
+                break;
+        }
+    }
+
+    // Legacy stub — kept so nothing else breaks if loop() is ever called
+    public void loop(Gamepad gp) {
+        loop2(gp);
+    }
+
+    public void updateTelemetry(Telemetry t) {
+        t.addData("Shooter state", state);
+        t.addData("Shots remaining", shotsRemaining);
+        t.addData("Shooting", shootingCurrently);
+        t.addData("Feeder position", feederServo.getPosition());
+        t.addData("Stopper position", stopperServo.getPosition());
     }
 
     public void stop() {
         shooterMotor0.setPower(0);
         shooterMotor1.setPower(0);
-        feederServo.setPosition(0);  // safe position
-        stopperServo.setPosition(0); // safe position
+        feederServo.setPosition(0);   // safe / retracted position
+        stopperServo.setPosition(0);  // safe / closed position
+        state = ShootState.IDLE;
+        shootingCurrently = false;
     }
 
     // HELPER METHODS
 
-    // start shooting
+    // kick off a 3-ball shooting sequence
     public void startShootingSequence() {
         shotsRemaining = 3;
         state = ShootState.SPINNING_UP;
@@ -171,7 +146,7 @@ public class Shooter {
         shootingCurrently = true;
     }
 
-    // check how long current state has been active
+    // returns true once the current state has been active for at least ms milliseconds
     public boolean timeElapsed(long ms) {
         return System.currentTimeMillis() - stateStartTime >= ms;
     }

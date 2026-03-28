@@ -39,9 +39,8 @@ public class Teleop extends OpMode {
         drivetrain.updateTelemetry(telemetry);
         intake.updateTelemetry(telemetry);
         shooter.updateTelemetry(telemetry);
-//        drivetrain.updateTelemetry(telemetry);
+        // drivetrain.updateTelemetry(telemetry);
         telemetry.addData("a", gamepad1.a);
-
 
         addMotorTelemetry("intake", hw.intake_motor);
         addMotorTelemetry("intake", hw.shooter_motor_1);
@@ -68,7 +67,8 @@ public class Teleop extends OpMode {
         telemetry.addLine("MOTOR: " + name);
         telemetry.addData("Power", m.getPower());
         telemetry.addData("Velocity", m.getVelocity());
-         telemetry.addData("Position", m.getCurrentPosition());        telemetry.addData("Mode", m.getMode());
+        telemetry.addData("Position", m.getCurrentPosition());
+        telemetry.addData("Mode", m.getMode());
         telemetry.addData("ZeroPower", m.getZeroPowerBehavior());
         telemetry.addData("Direction", m.getDirection());
     }
